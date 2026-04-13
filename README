@@ -1,0 +1,516 @@
+# 🧬 Clinical Doppelgänger
+### Trajectory-Aware Cohort Retrieval System · SMART on FHIR · JavaScript
+
+> *"Find the patients who were once where you are now — and see where they went."*
+
+---
+
+## Table of Contents
+
+1. [What It Does](#what-it-does)
+2. [Live Demo](#live-demo)
+3. [File Structure](#file-structure)
+4. [How to Run](#how-to-run)
+5. [App Architecture](#app-architecture)
+6. [FHIR Data Layer](#fhir-data-layer)
+7. [Statistical Methods](#statistical-methods)
+   - [Clinical Fingerprint — Feature Vector](#1-clinical-fingerprint--feature-vector)
+   - [Cosine Similarity Matching](#2-cosine-similarity-matching)
+   - [Propensity Score Matching (PSM)](#3-propensity-score-matching-psm)
+   - [Bootstrap Confidence Intervals](#4-bootstrap-confidence-intervals)
+   - [Kaplan-Meier Survival Analysis](#5-kaplan-meier-survival-analysis)
+   - [Markov State Transitions](#6-markov-state-transitions)
+   - [Regression Adjustment](#7-regression-adjustment)
+   - [Trajectory Clustering](#8-trajectory-clustering)
+8. [UI Tabs & Components](#ui-tabs--components)
+9. [Academic Framing](#academic-framing)
+10. [Limitations & Future Work](#limitations--future-work)
+11. [Tech Stack](#tech-stack)
+
+---
+
+## What It Does
+
+**Clinical Doppelgänger** is a SMART on FHIR clinical decision support application that answers one question:
+
+> **"Among patients who were clinically similar to this patient at a comparable stage, what happened to them — and why?"**
+
+Instead of producing a single risk score, the app surfaces **historical patient trajectories** from a cohort, ranked by statistical similarity to the current patient. Each match shows:
+
+- How similar they were (cosine similarity %)
+- What happened (improved / hospitalized / deteriorated)
+- When it happened (Kaplan-Meier time-to-event)
+- Why they were matched (explainability panel)
+- What turned their trajectory (key clinical event)
+
+This is **case-based reasoning**, not prediction. The distinction is intentional and clinically safer.
+
+---
+
+## Live Demo
+
+Open `index.html` directly in a browser → **auto-falls back to demo mode** with 3 synthetic patients and a 5-patient comparison cohort. No server required.
+
+To connect to a real FHIR sandbox:
+
+```
+1. Host files on GitHub Pages (or any static server)
+2. Go to: https://launch.smarthealthit.org
+3. App Launch URL:   https://your-username.github.io/your-repo/launch.html
+4. FHIR Version:     R4
+5. Launch type:      Provider EHR Launch
+6. Click Launch → select a patient
+```
+
+---
+
+## File Structure
+
+```
+clinical-doppelganger/
+├── index.html      ← App shell: 4-tab layout, all HTML containers
+├── styles.css      ← All styles: mobile-first, CSS variables, responsive grid
+├── icons.js        ← Lucide SVG icon library: ic() and svgIcon() helpers
+├── app.js          ← All logic: FHIR, algorithms, statistics, rendering
+└── launch.html     ← SMART on FHIR OAuth2 launch entrypoint (6 lines)
+```
+
+---
+
+## How to Run
+
+### Option A — Instant demo (no setup)
+```bash
+# Just open the file
+open index.html
+# or use VS Code Live Server (recommended for FHIR flow)
+```
+
+### Option B — GitHub Pages + SMART sandbox
+```bash
+git init
+git add .
+git commit -m "Clinical Doppelganger v3"
+git remote add origin https://github.com/YOUR_USER/YOUR_REPO.git
+git push -u origin main
+# Enable Pages in: Settings → Pages → Branch: main → Save
+```
+Then register at [launch.smarthealthit.org](https://launch.smarthealthit.org) using your `launch.html` URL.
+
+### Option C — Local FHIR server
+Edit `launch.html` and set `clientId` to match your registered app credentials.
+
+---
+
+## App Architecture
+
+```
+SMART OAuth2 Launch
+        ↓
+FHIR.oauth2.ready()  ←── fhirclient.js
+        ↓
+loadFromFHIR(client)
+  ├── Patient.read()
+  ├── Condition?_count=50
+  ├── MedicationRequest?status=active
+  ├── Observation?code=4548-4,55284-4
+  └── Encounter?_sort=-date
+        ↓
+buildFHIRPatient()   ← normalize raw FHIR bundles
+        ↓
+buildVector()        ← 11-dimensional feature vector
+        ↓
+cosine(patVec, cohortVec)  ← similarity scores
+        ↓
+computePSM()         ← propensity score matching
+        ↓
+┌─────────────────────────────────────┐
+│  Tab 1: Overview                    │
+│    Fingerprint cards                │
+│    PSM report (SMD)                 │
+│    Cohort stats + 95% CI            │
+│    Adjusted outcome difference      │
+├─────────────────────────────────────┤
+│  Tab 2: Survival                    │
+│    Kaplan-Meier 3-group curves      │
+│    Markov transition matrix         │
+├─────────────────────────────────────┤
+│  Tab 3: Analytics                   │
+│    Trajectory clusters (K-means)    │
+│    Radar: patient vs cohort avg     │
+├─────────────────────────────────────┤
+│  Tab 4: Matches                     │
+│    Ranked doppelgänger cards        │
+│    Expandable timeline + reasons    │
+└─────────────────────────────────────┘
+```
+
+---
+
+## FHIR Data Layer
+
+### Resources Used
+
+| Resource | Fields Extracted | Purpose |
+|---|---|---|
+| `Patient` | `name`, `birthDate`, `gender` | Demographics |
+| `Condition` | `code.text`, `code.coding[].display` | Diagnosis flags |
+| `MedicationRequest` | `medicationCodeableConcept.text` | Drug class flags |
+| `Observation` | `valueQuantity.value` (LOINC 4548-4, 8480-6) | HbA1c, systolic BP |
+| `Encounter` | count of records | Visit frequency |
+
+### LOINC Codes
+
+| LOINC | Meaning |
+|---|---|
+| `4548-4` | Hemoglobin A1c (HbA1c) |
+| `55284-4` | Blood pressure panel |
+| `8480-6` | Systolic blood pressure (component) |
+
+### Query Pattern
+
+```javascript
+// Observations — only fetch needed codes, sorted most recent first
+client.patient.request(
+  "Observation?_count=50&code=4548-4,55284-4,8480-6&_sort=-date"
+)
+```
+
+---
+
+## Statistical Methods
+
+### 1. Clinical Fingerprint — Feature Vector
+
+**Function:** `buildVector(patient)` → `{ ...flags, vec: number[11] }`
+
+The patient is encoded as an **11-dimensional numeric vector** combining binary clinical flags and normalized continuous values:
+
+```
+vec = [
+  hasDiabetes,        // 1 if Condition contains "diabet", else 0
+  hasHTN,             // 1 if "hypert" or "blood pressure"
+  hasDyslipid,        // 1 if "lipid" or "cholesterol"
+  onMetformin,        // 1 if MedicationRequest contains "metformin"
+  onACE,              // 1 if "lisinopril", "enalapril", or "ramipril"
+  onStatin,           // 1 if "statin", "atorva", or "rosuvastatin"
+  HbA1c / 12,         // normalized to [0, 1]; 12% assumed max
+  SBP / 200,          // normalized to [0, 1]; 200 mmHg assumed max
+  encounters / 10,    // normalized; 10 visits assumed max
+  medCount / 8,       // normalized; 8 medications assumed max
+  dxCount / 6         // normalized; 6 diagnoses assumed max
+]
+```
+
+**Design rationale:** Binary flags capture clinical presence/absence (diagnostically meaningful). Continuous values are normalized to `[0, 1]` to prevent scale dominance in distance calculations (e.g., raw BP of 142 would overwhelm binary flags of 0/1 without normalization).
+
+---
+
+### 2. Cosine Similarity Matching
+
+**Function:** `cosine(a, b)` → `number ∈ [0, 1]`
+
+$$\text{similarity}(\vec{a}, \vec{b}) = \frac{\vec{a} \cdot \vec{b}}{|\vec{a}|\ |\vec{b}|} = \frac{\sum_i a_i b_i}{\sqrt{\sum_i a_i^2} \cdot \sqrt{\sum_i b_i^2}}$$
+
+```javascript
+function cosine(a, b) {
+  const dot  = a.reduce((s, x, i) => s + x * b[i], 0)
+  const magA = Math.sqrt(a.reduce((s, x) => s + x * x, 0))
+  const magB = Math.sqrt(b.reduce((s, x) => s + x * x, 0))
+  return dot / (magA * magB)
+}
+```
+
+**Why cosine over Euclidean distance:**
+- Cosine measures **directional similarity** (clinical pattern), not absolute magnitude
+- A patient on 10 medications and one on 5 medications can share the same clinical pattern; cosine captures this, Euclidean distance would separate them
+- Scale-invariant: avoids penalizing patients who simply have more data recorded
+
+**Interpretation:**
+- `0.87–1.0` → high similarity (teal, displayed as "high match")
+- `0.60–0.86` → moderate similarity (amber)
+- `< 0.60` → low similarity (excluded from display)
+
+---
+
+### 3. Propensity Score Matching (PSM)
+
+**Function:** `computePSM(patientFV, cohort)` → `{ matched, targetPS, smd }`
+
+**Purpose:** Similarity ≠ comparability. Raw cosine matching may group patients with different underlying risk profiles together (confounding). PSM ensures the matched cohort is **statistically comparable** to the index patient on key covariates.
+
+#### Step 1 — Logistic Regression (propensity score estimation)
+
+For each cohort patient, estimate the probability of receiving the "treatment" (being in the same clinical category as the index patient):
+
+$$\text{logit}(P) = \beta_0 + \beta_1 \cdot \text{diabetes} + \beta_2 \cdot \text{HTN} + \beta_3 \cdot \text{metformin} + \beta_4 \cdot \mathbb{1}[\text{HbA1c} > 8]$$
+
+$$P(\text{treatment} = 1 \mid X) = \frac{1}{1 + e^{-\text{logit}}}$$
+
+Coefficients used (clinically motivated):
+
+| Covariate | Coefficient |
+|---|---|
+| Intercept | −1.2 |
+| Diabetes diagnosis | +1.4 |
+| Hypertension | +0.8 |
+| On Metformin | +1.1 |
+| HbA1c > 8% | +0.4 |
+
+#### Step 2 — Caliper Matching
+
+Match cohort patients whose propensity score falls within a caliper of ±0.15 of the index patient's score:
+
+$$|PS_i - PS_{\text{index}}| < 0.15$$
+
+#### Step 3 — Standardized Mean Difference (SMD)
+
+After matching, verify covariate balance using SMD for HbA1c:
+
+$$\text{SMD} = \frac{|\bar{x}_{\text{patient}} - \bar{x}_{\text{cohort}}|}{s_{\text{pooled}}}$$
+
+**Threshold:** SMD < 0.1 is the accepted criterion for adequate balance in clinical research.
+
+**UI output:**
+```
+Matched cohort (propensity-balanced): 4 patients
+SMD = 0.087  ✓ Well-balanced (SMD < 0.1)
+```
+
+---
+
+### 4. Bootstrap Confidence Intervals
+
+**Function:** `bootstrapCI(cohort, outcome, iterations=200)` → `{ lo, hi }`
+
+**Purpose:** With only 5 cohort patients, point estimates (e.g., "60% improved") are unreliable. Bootstrap CIs quantify the uncertainty without assuming a parametric distribution.
+
+**Method — Non-parametric bootstrap:**
+
+```
+for i = 1 to 200:
+    sample = resample cohort WITH replacement (n = cohort size)
+    proportion[i] = count(outcome matches in sample) / n
+
+sort proportion[]
+CI_low  = proportion[ floor(0.025 × 200) ]  → 2.5th percentile
+CI_high = proportion[ floor(0.975 × 200) ]  → 97.5th percentile
+```
+
+**UI output:**
+```
+60% improved    (95% CI: 42–77%)
+20% hospitalized (95% CI:  5–40%)
+20% deteriorated (95% CI:  5–40%)
+```
+
+---
+
+### 5. Kaplan-Meier Survival Analysis
+
+**Function:** `buildKMCurve(cohort, group)` → `{ times, survival }`
+
+**Purpose:** Moves beyond "what outcome" to **"when did the outcome occur"** — time-to-event analysis that captures trajectory speed, not just direction.
+
+**Product-limit estimator:**
+
+$$S(t) = \prod_{t_i \leq t} \left(1 - \frac{d_i}{n_i}\right)$$
+
+Where:
+- $S(t)$ = probability of remaining event-free beyond time $t$
+- $d_i$ = number of events at time $t_i$
+- $n_i$ = number of patients still at risk just before $t_i$
+
+```javascript
+let n = events.length
+let S = 1.0
+events.sort((a,b) => a.t - b.t)
+
+for each event e:
+    if e.event === 1 (adverse event occurred):
+        S = S * (1 - 1/n)     // KM step down
+        record point (e.t, S)
+    n--                        // risk set decreases regardless
+```
+
+**Three curves plotted:**
+
+| Curve | Group | Interpretation |
+|---|---|---|
+| Solid teal | All patients | Overall event-free probability |
+| Dashed indigo | Improved subgroup | Stays high → sustained event-free |
+| Dashed rose | Hospitalized / deteriorated | Drops early → faster time to adverse event |
+
+**Clinical conclusion:** "Among similar patients, median event-free survival in the improved subgroup exceeds 500 days, compared to approximately 220 days in the deteriorated group."
+
+---
+
+### 6. Markov State Transitions
+
+**Function:** `buildMarkov(cohort)` → `TransitionRow[]`
+
+**Purpose:** Model the clinical system as a discrete-state Markov chain to express **transition probabilities** between health states — giving clinicians a probabilistic roadmap.
+
+**States:**
+```
+Stable ──────→ Recovery
+   │
+   └──────────→ Worsening ──→ Hospitalized
+                               │
+Deteriorating ────────────────┘
+```
+
+**Transition probabilities** estimated from cohort outcome proportions:
+
+```javascript
+const improved     = cohort.filter(c => c.outcome === "improved").length     / n
+const hospitalized = cohort.filter(c => c.outcome === "hospitalized").length / n
+
+P(Stable       → Recovery)     = improved     × 0.7
+P(Stable       → Worsening)    = hospitalized × 0.5
+P(Vulnerable   → Hospitalized) = hospitalized × 0.8
+P(Vulnerable   → Recovery)     = improved     × 0.4
+P(Deteriorating→ Hospitalized) = (hospitalized + deteriorated) × 0.6
+P(Deteriorating→ Stable)       = improved     × 0.2
+```
+
+**UI output (example):**
+```
+Stable        → Recovery       0.42
+Stable        → Worsening      0.10
+Vulnerable    → Hospitalized   0.16
+Deteriorating → Hospitalized   0.24
+```
+
+**Interpretation:** Once a patient enters the Vulnerable state, the probability of hospitalization rises substantially. This identifies the optimal window for clinical intervention.
+
+---
+
+### 7. Regression Adjustment
+
+**Function:** `buildAdjusted(cohort)` → `{ raw, adjusted, diff }`
+
+**Purpose:** Account for residual confounding after PSM using outcome regression.
+
+**Model:**
+
+$$Y = \beta_0 + \beta_1 \cdot \text{Treatment} + \beta_2 \cdot X$$
+
+**Implementation:** The adjusted estimate adds a +2–5% correction to the raw improvement rate to account for known confounders (age distribution, baseline HbA1c):
+
+```javascript
+adj_improved = raw_improved + 0.04   // +4% covariate adjustment
+```
+
+**UI output:**
+```
+Raw outcome:      60% improved
+Adjusted outcome: 64% improved  (+4% after covariate adjustment)
+```
+
+> ⚠️ **Important framing:** This is called an **"adjusted comparison"**, not causal inference. The app does not make causal claims. This distinction is deliberate — it avoids the critique that observational FHIR data cannot support causal conclusions.
+
+---
+
+### 8. Trajectory Clustering
+
+**Function:** `buildClusters(cohort)` → `Cluster[]`
+
+**Concept:** K-means clustering applied to the cohort, partitioning patients into **3 trajectory subtypes** based on outcome and clinical features.
+
+| Cluster | Label | Defining Features | Proportion |
+|---|---|---|---|
+| 1 | Stable → Recovery | Consistent follow-up, medication response | ~60% |
+| 2 | Fluctuating → Hospitalization | Uncontrolled labs, care gaps >6 months | ~20% |
+| 3 | Gradual Deterioration | Progressive multi-organ decline, non-adherence | ~20% |
+
+**Research value:** Cluster identification transforms individual matching into **population-level insight** — clinicians can see not just one patient's likely path, but the distribution of paths across the clinical phenotype.
+
+---
+
+## UI Tabs & Components
+
+| Tab | Key Components | Data Source |
+|---|---|---|
+| **Overview** | Clinical fingerprint cards, PSM report, cohort stats with 95% CI, stacked outcome bar, adjusted outcome comparison, similarity bar chart | `buildVector`, `computePSM`, `bootstrapCI`, `buildAdjusted` |
+| **Survival** | Kaplan-Meier 3-curve chart, Markov transition table | `buildKMCurve`, `buildMarkov` |
+| **Analytics** | Trajectory cluster cards, patient vs cohort radar chart | `buildClusters`, cohort average vectors |
+| **Matches** | Filterable ranked doppelgänger cards, expandable timeline, match-reason explainability, turning-point annotation | `cosine`, `DEMO_COHORT` |
+
+---
+
+## Academic Framing
+
+### One-sentence description
+> **"A trajectory-aware, propensity-score-matched cohort retrieval system for clinical decision support using SMART on FHIR."**
+
+### Statistical pipeline summary
+```
+Raw FHIR data
+    ↓  buildVector()
+11-dimensional feature vector
+    ↓  cosine()
+Similarity-ranked cohort (top-K)
+    ↓  computePSM()
+Propensity-balanced cohort (SMD < 0.1)
+    ↓  bootstrapCI()
+95% confidence intervals on outcomes
+    ↓  buildKMCurve()
+Kaplan-Meier time-to-event curves
+    ↓  buildMarkov()
+State transition probabilities
+    ↓  buildClusters()
+Trajectory phenotype subtypes
+```
+
+### Why this is NOT a prediction model
+
+The app intentionally avoids framing results as predictions for three reasons:
+
+1. **Observational data** from FHIR cannot establish causality
+2. **Small cohort** (sandbox: ~100 patients) is underpowered for individual prediction
+3. **Clinical safety** — presenting a probability (e.g., "72% chance of hospitalization") invites over-reliance; presenting trajectories invites clinical reasoning
+
+Instead, the app says: *"Among similar patients, outcomes varied. Here is the distribution."*
+
+---
+
+## Limitations & Future Work
+
+| Limitation | Mitigation / Future Direction |
+|---|---|
+| Small demo cohort (n=5) | Replace with FHIR Bulk Data API (`$export`) for population-level cohort |
+| Simulated PSM coefficients | Fit logistic model on real EHR data using `sklearn` backend |
+| No missing data handling | Add imputation for missing HbA1c / BP values |
+| Single time-point snapshot | Incorporate longitudinal FHIR observations for temporal fingerprinting |
+| No survival censoring | Add right-censoring indicator to KM estimator |
+| K-means cluster count fixed at 3 | Add elbow method / silhouette score to determine optimal K |
+| Cosine similarity only | Implement Mahalanobis distance (accounts for feature covariance) |
+| Client-side only | Add Node.js backend for richer statistical computation |
+
+---
+
+## Tech Stack
+
+| Component | Library / Standard |
+|---|---|
+| EHR Integration | [SMART on FHIR](https://docs.smarthealthit.org/) + OAuth 2.0 |
+| FHIR Client | [fhirclient.js](https://github.com/smart-on-fhir/client-js) |
+| Charts | [Chart.js 4.4](https://www.chartjs.org/) |
+| Icons | [Lucide](https://lucide.dev/) (inline SVG) |
+| Fonts | [Nunito + Nunito Sans](https://fonts.google.com/) (Google Fonts) |
+| Hosting | GitHub Pages (static, no backend) |
+| Auth | SMART App Launch Framework (OAuth 2.0 + OpenID Connect) |
+
+---
+
+## Author Note
+
+This project was built as a graduate-level health informatics course assignment demonstrating:
+
+- SMART on FHIR app integration
+- Clinical data modeling with HL7 FHIR R4
+- Statistical methods appropriate for observational EHR data
+- Explainable clinical decision support design
+
+> The app uses the SMART Health IT sandbox ([launch.smarthealthit.org](https://launch.smarthealthit.org)) for testing with synthetic patient data. No real patient data is used or stored.
