@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical Doppelgänger</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="icons.js"></script>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading-screen">
+  <div class="ld-logo">
+    <div class="ld-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="var(--teal-dark)" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 15c6.667-6 13.333 0 20-6"/>
+        <path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/>
+        <path d="M10 9c-.195-1.995-.888-3.992-2-5.997"/>
+        <path d="m17 8-1.006 5.932"/>
+        <path d="M2 9c6.667 6 13.333 0 20 6"/>
+        <path d="m7 17 1.006-5.932"/>
+      </svg>
+    </div>
+    Clinical Doppelgänger
+  </div>
+  <div class="ld-sub">Connecting to FHIR server…</div>
+  <div class="ld-bar"><div class="ld-fill"></div></div>
+</div>
+
+<!-- Overlay -->
+<div id="sb-overlay" class="sb-overlay"></div>
+
+<!-- App -->
+<div id="app" class="app" style="display:none;">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">
+        <div class="sb-logo-icon">
+          <svg viewBox="0 0 24 24" fill="none"
+               stroke="rgba(255,255,255,0.92)" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 15c6.667-6 13.333 0 20-6"/>
+            <path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/>
+            <path d="M10 9c-.195-1.995-.888-3.992-2-5.997"/>
+            <path d="m17 8-1.006 5.932"/>
+            <path d="M2 9c6.667 6 13.333 0 20 6"/>
+            <path d="m7 17 1.006-5.932"/>
+          </svg>
+        </div>
+        <div>
+          <div class="sb-name">Clinical<br>Doppelgänger</div>
+        </div>
+      </div>
+      <div class="sb-tag">Trajectory Matching · SMART/FHIR</div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">Patients</div>
+      <div id="patient-list"></div>
+    </div>
+    <div class="sb-footer">
+      <button class="fhir-pill">
+        <div class="fhir-dot" id="fhir-dot"></div>
+        <span id="fhir-server-label">SMART Sandbox</span>
+      </button>
+      <div class="fhir-status" id="fhir-status">Demo mode</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Demo -->
+    <div id="demo-banner" class="demo-banner" style="display:none;">
+      ⚡ Demo mode — synthetic FHIR data.
+      Use <a href="http://launch.smarthealthit.org/" target="_blank">launch.smarthealthit.org</a> for live patients.
+    </div>
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <button id="menu-btn" class="tb-menu-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+             stroke="var(--teal-dark)" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div class="tb-avatar" id="tb-avatar">?</div>
+      <div class="tb-info">
+        <div class="tb-name" id="tb-name">Loading…</div>
+        <div class="tb-meta" id="tb-meta"></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <nav class="tab-nav">
+      <button id="tab-overview"  class="tab-btn active" onclick="switchTab('overview',this)">
+        <span id="ti-overview"></span> Overview
+      </button>
+      <button id="tab-survival"  class="tab-btn" onclick="switchTab('survival',this)">
+        <span id="ti-survival"></span> Survival
+      </button>
+      <button id="tab-analytics" class="tab-btn" onclick="switchTab('analytics',this)">
+        <span id="ti-analytics"></span> Analytics
+      </button>
+      <button id="tab-matches"   class="tab-btn" onclick="switchTab('matches',this)">
+        <span id="ti-matches"></span> Matches
+      </button>
+    </nav>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- Overview -->
+      <div id="panel-overview" class="tab-panel active">
+
+        <!-- Profile -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-icon" style="background:var(--teal-lt)" id="ci-patient"></div>
+            <div class="card-title">Patient Profile</div>
+          </div>
+          <div id="patient-chips"></div>
+        </div>
+
+        <!-- Fingerprint -->
+        <div>
+          <div class="section-head">
+            <div class="section-title" id="sh-fp"></div>
+            <div class="section-line"></div>
+          </div>
+          <div id="fp-grid" class="fp-grid"></div>
+        </div>
+
+        <!-- PSM -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-icon" style="background:var(--teal-lt)" id="ci-psm"></div>
+            <div class="card-title">Propensity Score Matching</div>
+            <div class="card-badge" style="background:var(--teal-lt);color:var(--teal-dark)" id="cb-psm"></div>
+          </div>
+          <div id="psm-info"></div>
+        </div>
+
+        <!-- Cohort -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-icon" style="background:var(--indigo-lt)" id="ci-cohort"></div>
+            <div class="card-title">Similar Cohort Overview</div>
+          </div>
+          <div id="cohort-stats" class="cohort-stats"></div>
+          <div id="stacked-bar" class="stacked-bar"></div>
+          <div id="adj-outcome" style="margin-top:12px"></div>
+          <div class="chart-box" style="margin-top:14px">
+            <canvas id="overview-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Note -->
+        <div class="uncertainty" id="unc-box">
+          <span id="unc-icon"></span>
+          <span><strong>Interpretive note:</strong> Among patients with similar profiles, outcomes varied. This tool surfaces historical trajectories — not individual predictions. Use alongside clinical judgment.</span>
+        </div>
+
+      </div>
+
+      <!-- Survival -->
+      <div id="panel-survival" class="tab-panel">
+
+        <div class="card">
+          <div class="card-head">
+            <div class="card-icon" style="background:var(--teal-lt)" id="ci-km"></div>
+            <div class="card-title">Kaplan-Meier Survival Curve</div>
+          </div>
+          <div class="km-legend">
+            <div class="km-leg"><div class="km-dot" style="background:rgba(0,137,123,0.9)"></div>All patients</div>
+            <div class="km-leg"><div class="km-dot" style="background:rgba(92,107,192,0.8);border-top:2px dashed rgba(92,107,192,0.8);height:0"></div>Improved</div>
+            <div class="km-leg"><div class="km-dot" style="background:rgba(224,92,122,0.8);height:2px;border-top:2px dashed rgba(224,92,122,0.8);height:0"></div>Hospitalized/deteriorated</div>
+          </div>
+          <div class="chart-tall">
+            <canvas id="km-chart"></canvas>
+          </div>
+          <div style="margin-top:12px;font-size:12px;font-weight:700;color:var(--muted);line-height:1.6">
+            Among similar patients, time to first adverse event differs significantly across trajectory groups. Patients in the improved subgroup remained event-free longer (median >500 days vs ~220 days).
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="card-icon" style="background:var(--amber-lt)" id="ci-markov"></div>
+            <div class="card-title">Markov State Transitions</div>
+          </div>
+          <table class="markov-table">
+            <thead>
+              <tr>
+                <th>From state</th>
+                <th>To state</th>
+                <th>Probability</th>
+              </tr>
+            </thead>
+            <tbody id="markov-body"></tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Analytics -->
+      <div id="panel-analytics" class="tab-panel">
+
+        <div class="row-2">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-icon" style="background:var(--rose-lt)" id="ci-cluster"></div>
+              <div class="card-title">Trajectory Clusters</div>
+            </div>
+            <div class="cluster-row" id="cluster-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="card-icon" style="background:var(--indigo-lt)" id="ci-radar"></div>
+              <div class="card-title">Patient vs Cohort</div>
+            </div>
+            <div style="height:220px;position:relative">
+              <canvas id="radar-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Matches -->
+      <div id="panel-matches" class="tab-panel">
+
+        <div class="filter-bar">
+          <span class="filter-label" id="fl-label"></span>
+          <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+          <button class="filter-btn" onclick="setFilter('improved',this)">
+            <span id="fi-imp"></span> Improved
+          </button>
+          <button class="filter-btn" onclick="setFilter('hospitalized',this)">
+            <span id="fi-hosp"></span> Hospitalized
+          </button>
+          <button class="filter-btn" onclick="setFilter('deteriorated',this)">
+            <span id="fi-det"></span> Deteriorated
+          </button>
+        </div>
+        <div id="dg-list" class="dg-list"></div>
+
+      </div>
+
+    </div><!-- Content end -->
+  </main>
+</div>
+
+<!-- Icons -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Tabs
+  el("ti-overview").innerHTML  = ic("brain",13,"currentColor");
+  el("ti-survival").innerHTML  = ic("activity",13,"currentColor");
+  el("ti-analytics").innerHTML = ic("bar-chart",13,"currentColor");
+  el("ti-matches").innerHTML   = ic("shuffle",13,"currentColor");
+  // Cards
+  el("ci-patient").innerHTML   = ic("user",16,"var(--teal-dark)");
+  el("ci-psm").innerHTML       = ic("check-circle",16,"var(--teal-dark)");
+  el("cb-psm").innerHTML       = ic("sparkles",11,"var(--teal-dark)") + " Research-grade";
+  el("ci-cohort").innerHTML    = ic("users",16,"var(--indigo)");
+  el("ci-km").innerHTML        = ic("activity",16,"var(--teal-dark)");
+  el("ci-markov").innerHTML    = ic("git-branch",16,"var(--amber)");
+  el("ci-cluster").innerHTML   = ic("layers",16,"var(--rose-dark)");
+  el("ci-radar").innerHTML     = ic("compare",16,"var(--indigo)");
+  // Headers
+  el("sh-fp").innerHTML        = ic("brain",11,"var(--muted)") + " Clinical Fingerprint";
+  // Note
+  el("unc-icon").innerHTML     = ic("info",15,"var(--indigo)");
+  // Filters
+  el("fl-label").innerHTML     = ic("filter",12,"var(--muted)") + " Outcome:";
+  el("fi-imp").innerHTML       = ic("trending-up",11,"currentColor");
+  el("fi-hosp").innerHTML      = ic("alert-circle",11,"currentColor");
+  el("fi-det").innerHTML       = ic("trending-down",11,"currentColor");
+});
+</script>
+<script src="app.js" defer></script>
+</body>
+</html>
