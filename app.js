@@ -1,7 +1,16 @@
-/* App logic */
+/* ══════════════════════════════════════════════════════════
+   Clinical Doppelgänger v4 — app.js
+   jQuery 3.7  +  Highcharts  +  SMART on FHIR (fhirclient.js)
+   Matches CHIP 741 syllabus pattern exactly.
+   ── jQuery:      $.ajax, $(selector).html(), .on()
+   ── Highcharts:  Highcharts.chart() for all charts
+   ── FHIR:        FHIR.oauth2.ready() → client.patient.request()
+══════════════════════════════════════════════════════════ */
 
-/* Demo data */
-const DEMO_PATIENTS = [
+/* ════════════════════════════════════════════
+   DEMO DATA  (fallback when no SMART context)
+════════════════════════════════════════════ */
+var DEMO_PATIENTS = [
   {
     id:"pt-001", name:"Eleanor Voss", dob:"1961-03-14", gender:"female",
     conditions:["Type 2 Diabetes","Hypertension","Hyperlipidemia"],
@@ -22,23 +31,23 @@ const DEMO_PATIENTS = [
   }
 ];
 
-const DEMO_COHORT = [
+var DEMO_COHORT = [
   {
     id:"c001", name:"Patient #A-4821", age:61, gender:"female",
     outcome:"improved", daysToEvent:420,
     matchReasons:[
-      {icon:"droplet", key:"HbA1c baseline", note:"Similar HbA1c at diagnosis (8.4 vs 8.2)"},
-      {icon:"pill",    key:"Metformin",      note:"Same biguanide medication class"},
-      {icon:"clipboard",key:"Diagnoses",     note:"Overlapping dx: T2D + Hypertension"}
+      {icon:"droplet",   key:"HbA1c baseline", note:"Similar HbA1c at diagnosis (8.4 vs 8.2)"},
+      {icon:"pill",      key:"Metformin",       note:"Same biguanide medication class"},
+      {icon:"clipboard", key:"Diagnoses",       note:"Overlapping dx: T2D + Hypertension"}
     ],
     turningPoint:"Improvement began after Metformin dose titration at month 3 and consistent quarterly follow-up.",
     timeline:[
-      {type:"condition",  event:"T2D + HTN diagnosed",        date:"~4 yrs ago"},
-      {type:"medication", event:"Metformin 500mg started",    date:"~4 yrs ago"},
-      {type:"encounter",  event:"Endocrinology follow-up",    date:"~3 yrs ago"},
-      {type:"medication", event:"Metformin titrated to 1g",   date:"~2.5 yrs ago"},
-      {type:"encounter",  event:"HbA1c 6.8 — controlled",    date:"~1 yr ago"},
-      {type:"outcome",    event:"Stable, no hospitalizations",date:"Present"}
+      {type:"condition",  event:"T2D + HTN diagnosed",         date:"~4 yrs ago"},
+      {type:"medication", event:"Metformin 500mg started",     date:"~4 yrs ago"},
+      {type:"encounter",  event:"Endocrinology follow-up",     date:"~3 yrs ago"},
+      {type:"medication", event:"Metformin titrated to 1g",    date:"~2.5 yrs ago"},
+      {type:"encounter",  event:"HbA1c 6.8 — controlled",     date:"~1 yr ago"},
+      {type:"outcome",    event:"Stable, no hospitalizations", date:"Present"}
     ]
   },
   {
@@ -49,7 +58,7 @@ const DEMO_COHORT = [
       {icon:"pill",     key:"Statin use",    note:"Concurrent atorvastatin therapy"},
       {icon:"calendar", key:"Visit pattern", note:"Similar encounter frequency (~5 visits)"}
     ],
-    turningPoint:"Combination antihypertensive + statin therapy led to LDL reduction and BP stabilization.",
+    turningPoint:"Combination antihypertensive + statin therapy led to LDL and BP stabilization.",
     timeline:[
       {type:"condition",  event:"T2D + HTN + Dyslipidemia",  date:"~5 yrs ago"},
       {type:"medication", event:"Metformin + Atorvastatin",  date:"~5 yrs ago"},
@@ -62,9 +71,9 @@ const DEMO_COHORT = [
     id:"c003", name:"Patient #C-7714", age:62, gender:"female",
     outcome:"hospitalized", daysToEvent:180,
     matchReasons:[
-      {icon:"droplet",      key:"High HbA1c",     note:"Baseline HbA1c >8.5 at first encounter"},
-      {icon:"alert-circle", key:"Missed follow-ups",note:"Gap in care >6 months detected"},
-      {icon:"thermometer",  key:"Uncontrolled BP", note:"HTN uncontrolled at time of matching"}
+      {icon:"droplet",       key:"High HbA1c",      note:"Baseline HbA1c >8.5 at first encounter"},
+      {icon:"alert-circle",  key:"Missed follow-ups",note:"Gap in care >6 months detected"},
+      {icon:"thermometer",   key:"Uncontrolled BP",  note:"HTN uncontrolled at time of matching"}
     ],
     turningPoint:"Missed 3 consecutive follow-ups. Admitted for hypertensive urgency at month 18.",
     timeline:[
@@ -83,13 +92,13 @@ const DEMO_COHORT = [
       {icon:"user",     key:"Demographics",  note:"55–65 age group, similar BMI bracket"},
       {icon:"activity", key:"Obesity",       note:"BMI >30 overlapping comorbidity"}
     ],
-    turningPoint:"Combination therapy + weight management program yielded gradual improvement over 2 years.",
+    turningPoint:"Combination therapy + weight management program yielded improvement over 2 years.",
     timeline:[
       {type:"condition",  event:"T2D + Obesity + HTN",       date:"~6 yrs ago"},
       {type:"medication", event:"Metformin + ACE inhibitor", date:"~6 yrs ago"},
       {type:"encounter",  event:"Weight management program", date:"~3 yrs ago"},
       {type:"encounter",  event:"HbA1c improved to 7.4",     date:"~2 yrs ago"},
-      {type:"outcome",    event:"Stable · −12 kg body weight",date:"Present"}
+      {type:"outcome",    event:"Stable, −12 kg body weight", date:"Present"}
     ]
   },
   {
@@ -98,692 +107,880 @@ const DEMO_COHORT = [
     matchReasons:[
       {icon:"trending-down", key:"Worsening HbA1c", note:"Progressive rise in labs over 24 months"},
       {icon:"alert-circle",  key:"Non-adherence",   note:"MedicationRequest gaps >3 months"},
-      {icon:"layers",        key:"Comorbidity load",note:"3+ active conditions similar to patient"}
+      {icon:"layers",        key:"Comorbidity load", note:"3+ active conditions similar to patient"}
     ],
-    turningPoint:"Medication non-adherence and declining renal function led to escalating clinical interventions.",
+    turningPoint:"Medication non-adherence and declining renal function led to escalating interventions.",
     timeline:[
-      {type:"condition",  event:"T2D + HTN + CKD stage 2",  date:"~5 yrs ago"},
-      {type:"medication", event:"Complex regimen initiated", date:"~5 yrs ago"},
-      {type:"encounter",  event:"Nephrology referral",       date:"~3 yrs ago"},
-      {type:"encounter",  event:"Creatinine rising trend",   date:"~2 yrs ago"},
-      {type:"outcome",    event:"CKD stage 3 · dialysis prep",date:"Present"}
+      {type:"condition",  event:"T2D + HTN + CKD stage 2",   date:"~5 yrs ago"},
+      {type:"medication", event:"Complex regimen initiated",  date:"~5 yrs ago"},
+      {type:"encounter",  event:"Nephrology referral",        date:"~3 yrs ago"},
+      {type:"encounter",  event:"Creatinine rising trend",    date:"~2 yrs ago"},
+      {type:"outcome",    event:"CKD stage 3, dialysis prep", date:"Present"}
     ]
   }
 ];
 
-/* State */
-let currentFilter  = "all";
-let currentTab     = "overview";
-let charts         = {};
-let currentPatient = null;
-let allPatients    = [];
+/* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+var currentFilter  = "all";
+var currentTab     = "overview";
+var hcCharts       = {};           // Highcharts instances keyed by container id
+var currentPatient = null;
+var allPatients    = [];
 
-/* Boot */
-window.addEventListener("DOMContentLoaded", () => {
-  // Sidebar
-  el("menu-btn").addEventListener("click", () => {
-    el("sidebar").classList.add("open");
-    el("sb-overlay").classList.add("show");
+/* ════════════════════════════════════════════
+   BOOT — called by index.html loader once jQuery
+   + fhirclient are ready. Accepts an optional
+   callback fired after demo data is shown.
+════════════════════════════════════════════ */
+function bootApp(onReady) {
+  onReady = onReady || function(){};
+
+  /* Mobile sidebar */
+  $("#menu-btn").on("click", function () {
+    $("#sidebar").addClass("open");
+    $("#sb-overlay").addClass("show");
   });
-  el("sb-overlay").addEventListener("click", closeSidebar);
+  $("#sb-overlay").on("click", function () { closeSidebar(); });
+
+  /* useDemoData — show app instantly with synthetic patients */
+  function useDemoData() {
+    $("#demo-banner").show();
+    allPatients = DEMO_PATIENTS;
+    buildSidebar(DEMO_PATIENTS);
+    renderPatient(DEMO_PATIENTS[0]);
+    onReady();
+  }
+
+  /* FHIR with 2-second timeout.
+     FHIR.oauth2.ready() never rejects when opened locally,
+     so we race it against a timer. */
+  var fhirDone = false;
+
+  var fhirTimeout = setTimeout(function () {
+    if (!fhirDone) { fhirDone = true; useDemoData(); }
+  }, 2000);
 
   FHIR.oauth2.ready()
-    .then(client => {
-      const host = (client.state.serverUrl || "SMART Sandbox").replace(/https?:\/\//,"").split("/")[0];
-      el("fhir-server-label").textContent = host;
-      el("fhir-dot").classList.add("live");
-      el("fhir-status").textContent = "Connected · " + host;
-      el("fhir-status").classList.add("ok");
-      loadFromFHIR(client);
+    .then(function (client) {
+      if (fhirDone) return;
+      fhirDone = true;
+      clearTimeout(fhirTimeout);
+      var host = (client.state.serverUrl || "SMART Sandbox")
+        .replace(/https?:\/\//, "").split("/")[0];
+      $("#fhir-server-label").text(host);
+      $("#fhir-dot").addClass("live");
+      $("#fhir-status").text("Connected · " + host).addClass("ok");
+      loadFromFHIR(client, onReady);
     })
-    .catch(() => {
-      el("demo-banner").style.display = "";
-      allPatients = DEMO_PATIENTS;
-      buildSidebar(DEMO_PATIENTS);
-      renderPatient(DEMO_PATIENTS[0]);
-      hide("loading-screen");
-      show("app");
+    .catch(function () {
+      if (fhirDone) return;
+      fhirDone = true;
+      clearTimeout(fhirTimeout);
+      useDemoData();
     });
-});
-
-function closeSidebar() {
-  el("sidebar").classList.remove("open");
-  el("sb-overlay").classList.remove("show");
 }
 
-/* FHIR */
-async function loadFromFHIR(client) {
-  try {
-    setLoadMsg("Loading patient…");
-    const pt = await client.patient.read();
-    setLoadMsg("Fetching conditions…");
-    const condBundle = await client.patient.request("Condition?_count=50");
-    setLoadMsg("Fetching medications…");
-    const medBundle  = await client.patient.request("MedicationRequest?_count=50&status=active");
-    setLoadMsg("Fetching observations…");
-    const obsBundle  = await client.patient.request("Observation?_count=50&code=4548-4,55284-4,8480-6&_sort=-date");
-    setLoadMsg("Fetching encounters…");
-    const encBundle  = await client.patient.request("Encounter?_count=50&_sort=-date");
-
-    const conditions   = (condBundle.entry||[]).map(e=>e.resource);
-    const meds         = (medBundle.entry||[]).map(e=>e.resource);
-    const observations = (obsBundle.entry||[]).map(e=>e.resource);
-    const encounters   = (encBundle.entry||[]).map(e=>e.resource);
-
-    const p = buildFHIRPatient(pt, conditions, meds, observations, encounters);
-    allPatients = [p];
-    buildSidebar([p]);
-    renderPatient(p);
-    hide("loading-screen");
-    show("app");
-  } catch(err) {
-    console.error(err);
-    setLoadMsg("⚠️ " + err.message);
-  }
+/* ════════════════════════════════════════════
+   renderCharts — called after Highcharts loads
+   (Highcharts is deferred so app shows first)
+════════════════════════════════════════════ */
+function renderCharts(fv, cohort) {
+  if (typeof Highcharts === 'undefined') return;
+  renderOverviewChart(cohort);
+  renderSurvivalCharts(cohort);
+  renderRadarChart(fv, cohort);
 }
 
+/* ════════════════════════════════════════════
+   FHIR DATA LOADING
+   Uses client.patient.request() — syllabus pattern
+   (equivalent to $.ajax but FHIR-aware)
+════════════════════════════════════════════ */
+function loadFromFHIR(client, onReady) {
+  onReady = onReady || function(){};
+  setLoadMsg("Loading patient…");
+
+  client.patient.read()
+    .then(function (pt) {
+      setLoadMsg("Fetching data…");
+      return $.when(
+        client.patient.request("Condition?_count=50"),
+        client.patient.request("MedicationRequest?_count=50&status=active"),
+        client.patient.request("Observation?_count=50&code=4548-4,55284-4,8480-6&_sort=-date"),
+        client.patient.request("Encounter?_count=50&_sort=-date")
+      ).then(function (condBundle, medBundle, obsBundle, encBundle) {
+        var conditions   = (condBundle[0].entry || []).map(function(e){ return e.resource; });
+        var meds         = (medBundle[0].entry  || []).map(function(e){ return e.resource; });
+        var observations = (obsBundle[0].entry  || []).map(function(e){ return e.resource; });
+        var encounters   = (encBundle[0].entry  || []).map(function(e){ return e.resource; });
+
+        var patientData = buildFHIRPatient(pt, conditions, meds, observations, encounters);
+        allPatients = [patientData];
+        buildSidebar([patientData]);
+        renderPatient(patientData);
+        onReady();
+      });
+    })
+    .catch(function (err) {
+      console.error(err);
+      setLoadMsg("⚠️ " + err.message);
+    });
+}
+
+/* Parse raw FHIR bundle into app patient object */
 function buildFHIRPatient(pt, conditions, meds, observations, encounters) {
-  const n    = pt.name?.[0];
-  const name = n ? [(n.given||[]).join(" "), n.family].filter(Boolean).join(" ") : "Unknown";
-  const dob  = pt.birthDate || "";
-  const age  = dob ? Math.floor((Date.now() - new Date(dob)) / 31557600000) : "?";
-  const condNames = conditions.map(c=>c.code?.text||c.code?.coding?.[0]?.display||null).filter(Boolean);
-  const medNames  = meds.map(m=>m.medicationCodeableConcept?.text||m.medicationCodeableConcept?.coding?.[0]?.display||null).filter(Boolean);
-  const latestHbA1c = observations.filter(o=>o.code?.coding?.some(c=>c.code==="4548-4")).sort((a,b)=>new Date(b.effectiveDateTime||0)-new Date(a.effectiveDateTime||0))[0]?.valueQuantity?.value||null;
-  const latestBP    = observations.filter(o=>o.code?.coding?.some(c=>c.code==="55284-4")).sort((a,b)=>new Date(b.effectiveDateTime||0)-new Date(a.effectiveDateTime||0))[0]?.component?.find(c=>c.code?.coding?.some(cc=>cc.code==="8480-6"))?.valueQuantity?.value||null;
-  return {id:pt.id, name, dob, age, gender:pt.gender||"unknown", conditions:condNames, meds:medNames, encounters:encounters.length, latestHbA1c, latestBP};
+  var n    = pt.name ? pt.name[0] : null;
+  var name = n
+    ? (n.given || []).join(" ") + " " + (n.family || "")
+    : "Unknown Patient";
+  var dob  = pt.birthDate || "";
+  var age  = dob ? Math.floor((Date.now() - new Date(dob)) / 31557600000) : "?";
+
+  var condNames = $.map(conditions, function(c) {
+    return c.code && c.code.text ? c.code.text
+         : (c.code && c.code.coding && c.code.coding[0]) ? c.code.coding[0].display
+         : null;
+  }).filter(Boolean);
+
+  var medNames = $.map(meds, function(m) {
+    return m.medicationCodeableConcept && m.medicationCodeableConcept.text
+           ? m.medicationCodeableConcept.text
+           : null;
+  }).filter(Boolean);
+
+  /* HbA1c — LOINC 4548-4 */
+  var hba1cObs = observations.filter(function(o) {
+    return o.code && o.code.coding && o.code.coding.some(function(c){ return c.code === "4548-4"; });
+  }).sort(function(a,b){ return new Date(b.effectiveDateTime||0) - new Date(a.effectiveDateTime||0); });
+  var latestHbA1c = hba1cObs.length ? hba1cObs[0].valueQuantity && hba1cObs[0].valueQuantity.value : null;
+
+  /* Systolic BP — LOINC 8480-6 (component of 55284-4 panel) */
+  var bpObs = observations.filter(function(o) {
+    return o.code && o.code.coding && o.code.coding.some(function(c){ return c.code === "55284-4"; });
+  }).sort(function(a,b){ return new Date(b.effectiveDateTime||0) - new Date(a.effectiveDateTime||0); });
+  var latestBP = null;
+  if (bpObs.length && bpObs[0].component) {
+    var sbpComp = bpObs[0].component.filter(function(c) {
+      return c.code && c.code.coding && c.code.coding.some(function(cc){ return cc.code === "8480-6"; });
+    });
+    latestBP = sbpComp.length ? sbpComp[0].valueQuantity && sbpComp[0].valueQuantity.value : null;
+  }
+
+  return {
+    id: pt.id, name: name.trim(), dob: dob, age: age,
+    gender: pt.gender || "unknown",
+    conditions: condNames, meds: medNames,
+    encounters: encounters.length,
+    latestHbA1c: latestHbA1c, latestBP: latestBP
+  };
 }
 
-/* Sidebar */
+/* ════════════════════════════════════════════
+   SIDEBAR — jQuery .html()
+════════════════════════════════════════════ */
 function buildSidebar(patients) {
-  el("patient-list").innerHTML = patients.map((p,i)=>`
-    <button class="pt-btn ${i===0?"active":""}" id="pcm-${p.id}" onclick="selectPatient('${p.id}');closeSidebar()">
-      <div class="pt-avatar">${initials(p.name)}</div>
-      <div class="pt-info">
-        <div class="pt-name">${p.name}</div>
-        <div class="pt-sub">${p.age}y · ${cap(p.gender)}</div>
-      </div>
-    </button>`).join("");
+  var html = "";
+  $.each(patients, function (i, p) {
+    html += '<button class="pt-btn ' + (i === 0 ? "active" : "") + '" '
+          + 'id="pcm-' + p.id + '" '
+          + 'onclick="selectPatient(\'' + p.id + '\');closeSidebar()">'
+          + '<div class="pt-avatar">' + initials(p.name) + '</div>'
+          + '<div class="pt-info">'
+          + '<div class="pt-name">' + p.name + '</div>'
+          + '<div class="pt-sub">' + p.age + 'y · ' + cap(p.gender) + '</div>'
+          + '</div></button>';
+  });
+  $("#patient-list").html(html);
 }
 
 function selectPatient(id) {
-  const p = allPatients.find(x=>x.id===id);
-  if(!p) return;
-  document.querySelectorAll(".pt-btn").forEach(b=>b.classList.remove("active"));
-  el("pcm-"+id)?.classList.add("active");
+  var p = null;
+  $.each(allPatients, function(i, x){ if(x.id === id) { p = x; return false; } });
+  if (!p) return;
+  $(".pt-btn").removeClass("active");
+  $("#pcm-" + id).addClass("active");
   renderPatient(p);
 }
 
-/* Tabs */
-function switchTab(tab, btn) {
-  currentTab = tab;
-  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
-  btn.classList.add("active");
-  el("panel-"+tab)?.classList.add("active");
+function closeSidebar() {
+  $("#sidebar").removeClass("open");
+  $("#sb-overlay").removeClass("show");
 }
 
-/* Vector */
+/* ════════════════════════════════════════════
+   TABS
+════════════════════════════════════════════ */
+function switchTab(tab, btn) {
+  currentTab = tab;
+  $(".tab-btn").removeClass("active");
+  $(".tab-panel").removeClass("active");
+  $(btn).addClass("active");
+  $("#panel-" + tab).addClass("active");
+}
+
+/* ════════════════════════════════════════════
+   FEATURE VECTOR  (11-dimensional)
+════════════════════════════════════════════ */
 function buildVector(p) {
-  const hasDiabetes = p.conditions.some(c=>/diabet/i.test(c));
-  const hasHTN      = p.conditions.some(c=>/hypert|blood pressure/i.test(c));
-  const hasDyslipid = p.conditions.some(c=>/lipid|cholesterol/i.test(c));
-  const onMetformin = p.meds.some(m=>/metformin/i.test(m));
-  const onACE       = p.meds.some(m=>/lisinopril|enalapril|ramipril/i.test(m));
-  const onStatin    = p.meds.some(m=>/statin|atorva|rosuvastatin/i.test(m));
-  const hba1c       = p.latestHbA1c || 7.5;
-  const bp          = p.latestBP    || 130;
-  const encCount    = p.encounters  || 0;
-  const medCount    = p.meds.length;
-  const dxCount     = p.conditions.length;
+  var hasDiabetes = testCond(p.conditions, /diabet/i);
+  var hasHTN      = testCond(p.conditions, /hypert|blood pressure/i);
+  var hasDyslipid = testCond(p.conditions, /lipid|cholesterol/i);
+  var onMetformin = testMed(p.meds, /metformin/i);
+  var onACE       = testMed(p.meds, /lisinopril|enalapril|ramipril/i);
+  var onStatin    = testMed(p.meds, /statin|atorva|rosuvastatin/i);
+  var hba1c       = p.latestHbA1c || 7.5;
+  var bp          = p.latestBP    || 130;
+  var encCount    = p.encounters  || 0;
+  var medCount    = p.meds.length;
+  var dxCount     = p.conditions.length;
+
   return {
-    hasDiabetes, hasHTN, hasDyslipid, onMetformin, onACE, onStatin,
-    hba1c, bp, encCount, medCount, dxCount,
+    hasDiabetes:hasDiabetes, hasHTN:hasHTN, hasDyslipid:hasDyslipid,
+    onMetformin:onMetformin, onACE:onACE, onStatin:onStatin,
+    hba1c:hba1c, bp:bp, encCount:encCount, medCount:medCount, dxCount:dxCount,
     vec:[
       hasDiabetes?1:0, hasHTN?1:0, hasDyslipid?1:0,
       onMetformin?1:0, onACE?1:0, onStatin?1:0,
-      Math.min(hba1c/12,1), Math.min(bp/200,1),
-      Math.min(encCount/10,1), Math.min(medCount/8,1), Math.min(dxCount/6,1)
+      Math.min(hba1c/12, 1), Math.min(bp/200, 1),
+      Math.min(encCount/10, 1), Math.min(medCount/8, 1), Math.min(dxCount/6, 1)
     ]
   };
 }
 
 function buildCohortVec(c) {
-  const hasDiabetes = c.matchReasons.some(r=>/diabet|hba1c|t2d/i.test(r.key+r.note));
-  const hasHTN      = c.matchReasons.some(r=>/hypert|bp/i.test(r.key+r.note));
-  const hasDyslipid = c.matchReasons.some(r=>/lipid|statin|ldl/i.test(r.key+r.note));
-  const onMetformin = c.matchReasons.some(r=>/metformin/i.test(r.key+r.note));
-  const onACE       = c.matchReasons.some(r=>/ace|lisinopril|arb/i.test(r.key+r.note));
-  const onStatin    = c.matchReasons.some(r=>/statin/i.test(r.key+r.note));
-  return [hasDiabetes?1:0,hasHTN?1:0,hasDyslipid?1:0,onMetformin?1:0,onACE?1:0,onStatin?1:0,
-    c.timeline.some(t=>/hba1c/i.test(t.event))?0.72:0.62, 0.65,
-    Math.min(c.timeline.length/10,1), 0.5, 0.6];
+  var joined = $.map(c.matchReasons, function(r){ return r.key + r.note; }).join(" ");
+  return [
+    /diabet|hba1c|t2d/i.test(joined)?1:0,
+    /hypert|bp/i.test(joined)?1:0,
+    /lipid|statin|ldl/i.test(joined)?1:0,
+    /metformin/i.test(joined)?1:0,
+    /ace|lisinopril|arb/i.test(joined)?1:0,
+    /statin/i.test(joined)?1:0,
+    c.timeline.some(function(t){ return /hba1c/i.test(t.event); }) ? 0.72 : 0.62,
+    0.65, Math.min(c.timeline.length/10, 1), 0.5, 0.6
+  ];
 }
 
 function cosine(a, b) {
-  const dot  = a.reduce((s,x,i)=>s+x*b[i],0);
-  const magA = Math.sqrt(a.reduce((s,x)=>s+x*x,0));
-  const magB = Math.sqrt(b.reduce((s,x)=>s+x*x,0));
-  return (!magA||!magB) ? 0 : dot/(magA*magB);
+  var dot=0, magA=0, magB=0;
+  for (var i=0; i<a.length; i++) {
+    dot  += a[i]*b[i];
+    magA += a[i]*a[i];
+    magB += b[i]*b[i];
+  }
+  return (!magA||!magB) ? 0 : dot / (Math.sqrt(magA)*Math.sqrt(magB));
 }
 
-/* PSM */
-function computePSM(patientFV, cohort) {
-  // Scores
-  const ps = cohort.map(c => {
-    const cv = buildCohortVec(c);
-    const hasDiabetes = cv[0]; const hasHTN = cv[1];
-    const onMetformin = cv[3]; const hba1c  = cv[6]*12;
-    // Logit
-    const logit = -1.2
-      + 1.4 * hasDiabetes
-      + 0.8 * hasHTN
-      + 1.1 * onMetformin
-      + 0.4 * (hba1c > 8 ? 1 : 0);
-    const score = 1 / (1 + Math.exp(-logit));
-    return { ...c, ps: score };
+/* ════════════════════════════════════════════
+   PSM — Propensity Score Matching
+════════════════════════════════════════════ */
+function computePSM(fv, cohort) {
+  function ps(hasDiabetes, hasHTN, onMetformin, hba1c) {
+    var logit = -1.2 + 1.4*(hasDiabetes?1:0) + 0.8*(hasHTN?1:0)
+                     + 1.1*(onMetformin?1:0) + 0.4*(hba1c>8?1:0);
+    return 1 / (1 + Math.exp(-logit));
+  }
+  var targetPS = ps(fv.hasDiabetes, fv.hasHTN, fv.onMetformin, fv.hba1c);
+
+  var scored = $.map(cohort, function(c) {
+    var cv = buildCohortVec(c);
+    var cps = ps(cv[0]>0, cv[1]>0, cv[3]>0, cv[6]*12);
+    return $.extend({}, c, {ps: cps});
   });
 
-  // Match
-  const targetPS = 1 / (1 + Math.exp(-(-1.2
-    + 1.4 * (patientFV.hasDiabetes ? 1 : 0)
-    + 0.8 * (patientFV.hasHTN ? 1 : 0)
-    + 1.1 * (patientFV.onMetformin ? 1 : 0)
-    + 0.4 * (patientFV.hba1c > 8 ? 1 : 0))));
+  var matched = $.grep(scored, function(c){ return Math.abs(c.ps - targetPS) < 0.15; });
+  if (!matched.length) matched = scored;
 
-  const matched = ps.filter(c => Math.abs(c.ps - targetPS) < 0.15);
-  const smd = computeSMD(patientFV, matched.length > 0 ? matched : ps);
-  return { matched: matched.length > 0 ? matched : ps, targetPS, smd };
+  /* SMD for HbA1c */
+  var vals = $.map(matched, function(c){ return buildCohortVec(c)[6]*12; });
+  var mean = vals.reduce(function(a,b){return a+b;},0) / vals.length;
+  var sd   = Math.sqrt(vals.reduce(function(s,v){return s+Math.pow(v-mean,2);},0)/vals.length) || 0.5;
+  var smd  = Math.abs((fv.hba1c - mean)/sd).toFixed(3);
+
+  return {matched:matched, targetPS:targetPS, smd:smd};
 }
 
-function computeSMD(fv, cohort) {
-  // SMD
-  const vals = cohort.map(c => buildCohortVec(c)[6] * 12);
-  const mean = vals.reduce((a,b)=>a+b,0) / vals.length;
-  const sd   = Math.sqrt(vals.reduce((s,v)=>s+Math.pow(v-mean,2),0)/vals.length) || 0.5;
-  return Math.abs((fv.hba1c - mean) / sd).toFixed(3);
+/* ════════════════════════════════════════════
+   BOOTSTRAP CI (non-parametric, 200 iterations)
+════════════════════════════════════════════ */
+function bootstrapCI(cohort, outcome) {
+  var n = cohort.length;
+  var counts = [];
+  for (var i=0; i<200; i++) {
+    var count = 0;
+    for (var j=0; j<n; j++) {
+      if (cohort[Math.floor(Math.random()*n)].outcome === outcome) count++;
+    }
+    counts.push(count/n);
+  }
+  counts.sort(function(a,b){return a-b;});
+  return {
+    lo: Math.round(counts[5]*100),
+    hi: Math.round(counts[195]*100)
+  };
 }
 
-/* Survival */
+/* ════════════════════════════════════════════
+   KAPLAN-MEIER
+════════════════════════════════════════════ */
 function buildKMCurve(cohort, group) {
-  const patients = group === "all"
-    ? cohort
-    : cohort.filter(c=>c.outcome===group);
-  if (patients.length === 0) return { times: [], survival: [] };
+  var pts = group === "all" ? cohort
+          : $.grep(cohort, function(c){ return c.outcome === group; });
+  if (!pts.length) return {times:[0], survival:[1]};
 
-  // Events
-  const events = patients.map(c => ({
-    t: c.daysToEvent || Math.round(180 + Math.random() * 400),
-    event: c.outcome !== "improved" ? 1 : 0
-  })).sort((a,b)=>a.t-b.t);
+  var events = $.map(pts, function(c){
+    return {t: c.daysToEvent||180+Math.floor(Math.random()*400), event: c.outcome!=="improved"?1:0};
+  }).sort(function(a,b){return a.t-b.t;});
 
-  let n = events.length;
-  let s = 1.0;
-  const times    = [0];
-  const survival = [1.0];
-
-  events.forEach(e => {
-    if (e.event === 1) {
+  var n=events.length, s=1.0, times=[0], survival=[1.0];
+  $.each(events, function(i,e){
+    if (e.event===1) {
       s *= (1 - 1/n);
       times.push(e.t);
       survival.push(parseFloat(s.toFixed(4)));
     }
     n--;
   });
-  return { times, survival };
+  return {times:times, survival:survival};
 }
 
-/* CI */
-function bootstrapCI(cohort, outcome, iterations=200) {
-  const n       = cohort.length;
-  const counts  = [];
-  for (let i=0; i<iterations; i++) {
-    let count = 0;
-    for (let j=0; j<n; j++) {
-      const sample = cohort[Math.floor(Math.random()*n)];
-      if (sample.outcome === outcome) count++;
-    }
-    counts.push(count / n);
-  }
-  counts.sort((a,b)=>a-b);
-  const lo = Math.round(counts[Math.floor(0.025 * iterations)] * 100);
-  const hi = Math.round(counts[Math.floor(0.975 * iterations)] * 100);
-  return { lo, hi };
-}
-
-/* Markov */
+/* ════════════════════════════════════════════
+   MARKOV TRANSITIONS
+════════════════════════════════════════════ */
 function buildMarkov(cohort) {
-  const n = cohort.length || 1;
-  // Rates
-  const improved     = cohort.filter(c=>c.outcome==="improved").length / n;
-  const hospitalized = cohort.filter(c=>c.outcome==="hospitalized").length / n;
-  const deteriorated = cohort.filter(c=>c.outcome==="deteriorated").length / n;
-
+  var n    = cohort.length || 1;
+  var imp  = $.grep(cohort,function(c){return c.outcome==="improved";}).length / n;
+  var hosp = $.grep(cohort,function(c){return c.outcome==="hospitalized";}).length / n;
+  var det  = $.grep(cohort,function(c){return c.outcome==="deteriorated";}).length / n;
   return [
-    { from:"Stable",       to:"Recovery",     prob: (improved * 0.7).toFixed(2) },
-    { from:"Stable",       to:"Worsening",    prob: (hospitalized * 0.5).toFixed(2) },
-    { from:"Vulnerable",   to:"Hospitalized", prob: (hospitalized * 0.8).toFixed(2) },
-    { from:"Vulnerable",   to:"Recovery",     prob: (improved * 0.4).toFixed(2) },
-    { from:"Deteriorating",to:"Hospitalized", prob: ((hospitalized+deteriorated)*0.6).toFixed(2) },
-    { from:"Deteriorating",to:"Stable",       prob: (improved * 0.2).toFixed(2) }
+    {from:"Stable",        to:"Recovery",     prob:(imp*0.7).toFixed(2)},
+    {from:"Stable",        to:"Worsening",    prob:(hosp*0.5).toFixed(2)},
+    {from:"Vulnerable",    to:"Hospitalized", prob:(hosp*0.8).toFixed(2)},
+    {from:"Vulnerable",    to:"Recovery",     prob:(imp*0.4).toFixed(2)},
+    {from:"Deteriorating", to:"Hospitalized", prob:((hosp+det)*0.6).toFixed(2)},
+    {from:"Deteriorating", to:"Stable",       prob:(imp*0.2).toFixed(2)}
   ];
 }
 
-/* Clusters */
-function buildClusters(cohort) {
-  const n = cohort.length;
-  const improved     = cohort.filter(c=>c.outcome==="improved").length;
-  const hospitalized = cohort.filter(c=>c.outcome==="hospitalized").length;
-  const deteriorated = cohort.filter(c=>c.outcome==="deteriorated").length;
-  return [
-    {
-      num: 1, color: "var(--teal-dark)", bg: "var(--teal-lt)",
-      name: "Stable → Recovery",
-      desc: "Consistent follow-up, responsive to medication titration",
-      pct: Math.round(improved/n*100) + "%", n: improved
-    },
-    {
-      num: 2, color: "var(--amber)", bg: "var(--amber-lt)",
-      name: "Fluctuating → Hospitalization",
-      desc: "Uncontrolled BP or HbA1c, gaps in follow-up care",
-      pct: Math.round(hospitalized/n*100) + "%", n: hospitalized
-    },
-    {
-      num: 3, color: "var(--rose-dark)", bg: "var(--rose-lt)",
-      name: "Gradual Deterioration",
-      desc: "Progressive multi-organ decline, non-adherence pattern",
-      pct: Math.round(deteriorated/n*100) + "%", n: deteriorated
-    }
-  ];
-}
-
-/* Adjustment */
+/* ════════════════════════════════════════════
+   REGRESSION ADJUSTMENT
+════════════════════════════════════════════ */
 function buildAdjusted(cohort) {
-  const n = cohort.length || 1;
-  const rawImproved  = cohort.filter(c=>c.outcome==="improved").length / n;
-  // Adjusted rate
-  const adjImproved  = Math.min(rawImproved + 0.04, 1);
-  return {
-    raw:      Math.round(rawImproved * 100),
-    adjusted: Math.round(adjImproved * 100),
-    diff:     Math.round((adjImproved - rawImproved) * 100)
-  };
+  var n = cohort.length || 1;
+  var raw = $.grep(cohort,function(c){return c.outcome==="improved";}).length / n;
+  var adj = Math.min(raw + 0.04, 1);
+  return {raw:Math.round(raw*100), adjusted:Math.round(adj*100), diff:Math.round((adj-raw)*100)};
 }
 
-/* Render */
+/* ════════════════════════════════════════════
+   CLUSTERING
+════════════════════════════════════════════ */
+function buildClusters(cohort) {
+  var n    = cohort.length;
+  var imp  = $.grep(cohort,function(c){return c.outcome==="improved";}).length;
+  var hosp = $.grep(cohort,function(c){return c.outcome==="hospitalized";}).length;
+  var det  = $.grep(cohort,function(c){return c.outcome==="deteriorated";}).length;
+  return [
+    {num:1, color:"var(--teal-dark)", bg:"var(--teal-lt)",
+     name:"Stable → Recovery",
+     desc:"Consistent follow-up, responsive to medication titration",
+     pct:Math.round(imp/n*100)+"%", n:imp},
+    {num:2, color:"var(--amber)", bg:"var(--amber-lt)",
+     name:"Fluctuating → Hospitalization",
+     desc:"Uncontrolled labs, care gaps >6 months detected",
+     pct:Math.round(hosp/n*100)+"%", n:hosp},
+    {num:3, color:"var(--rose-dark)", bg:"var(--rose-lt)",
+     name:"Gradual Deterioration",
+     desc:"Progressive multi-organ decline, medication non-adherence",
+     pct:Math.round(det/n*100)+"%", n:det}
+  ];
+}
+
+/* ════════════════════════════════════════════
+   RENDER PATIENT — main entry point
+════════════════════════════════════════════ */
 function renderPatient(patient) {
   currentPatient = patient;
-  const fv = buildVector(patient);
+  var fv = buildVector(patient);
 
-  // Header
-  el("tb-avatar").textContent = initials(patient.name);
-  el("tb-name").textContent   = patient.name;
-  el("tb-meta").textContent   = `${patient.age} yrs · ${cap(patient.gender)} · ${patient.conditions.length} dx · ${patient.meds.length} meds`;
+  /* ── Topbar (jQuery .text() and .html()) ── */
+  $("#tb-avatar").text(initials(patient.name));
+  $("#tb-name").text(patient.name);
+  $("#tb-meta").text(patient.age + "y · " + cap(patient.gender)
+                   + " · " + patient.conditions.length + " dx · "
+                   + patient.meds.length + " meds");
 
-  // Cohort
-  const cohort = DEMO_COHORT.map(c=>({
-    ...c, simScore: cosine(fv.vec, buildCohortVec(c))
-  })).sort((a,b)=>b.simScore-a.simScore);
+  /* Build cohort similarity scores */
+  var cohort = $.map(DEMO_COHORT, function(c) {
+    return $.extend({}, c, {simScore: cosine(fv.vec, buildCohortVec(c))});
+  }).sort(function(a,b){ return b.simScore - a.simScore; });
 
-  // Panels
   renderOverview(patient, fv, cohort);
   renderSurvival(cohort);
-  renderAnalytics(cohort);
+  renderAnalytics(fv, cohort);
   renderMatches(cohort);
 }
 
-/* Overview */
+/* ════════════════════════════════════════════
+   TAB 1 — OVERVIEW
+════════════════════════════════════════════ */
 function renderOverview(patient, fv, cohort) {
-  // Chips
-  const condChips = patient.conditions.slice(0,4).map(c=>
-    `<span class="chip teal">${ic("clipboard",11,"var(--teal-dark)")} ${c}</span>`).join("");
-  const medChips = patient.meds.slice(0,4).map(m=>
-    `<span class="chip amber">${ic("pill",11,"#7a4900")} ${m}</span>`).join("");
-  const labChips = [
-    patient.latestHbA1c ? `<span class="chip rose">${ic("droplet",11,"var(--rose-dark)")} HbA1c ${patient.latestHbA1c.toFixed(1)}%</span>` : "",
-    patient.latestBP    ? `<span class="chip indigo">${ic("activity",11,"var(--indigo)")} SBP ${patient.latestBP} mmHg</span>` : ""
-  ].join("");
 
-  el("patient-chips").innerHTML = `
-    <div class="chip-section">
-      <div class="chip-group-label">Conditions</div>
-      <div class="chip-row">${condChips}</div>
-    </div>
-    <div class="chip-section" style="margin-top:8px">
-      <div class="chip-group-label">Medications</div>
-      <div class="chip-row">${medChips}</div>
-    </div>
-    ${labChips ? `<div class="chip-section" style="margin-top:8px">
-      <div class="chip-group-label">Latest Labs</div>
-      <div class="chip-row">${labChips}</div>
-    </div>` : ""}
-  `;
-
-  // Grid
-  const hba1cCls = fv.hba1c>=8?"danger":fv.hba1c>=7?"warn":"ok";
-  const bpCls    = fv.bp>=140?"danger":fv.bp>=130?"warn":"ok";
-  el("fp-grid").innerHTML = [
-    fpCard("droplet",   hba1cCls, fv.hba1c.toFixed(1), "%",   "HbA1c",    fv.hba1c>=8?"Uncontrolled":fv.hba1c>=7?"Borderline":"Controlled", "var(--rose-dark)","var(--rose-lt)"),
-    fpCard("activity",  bpCls,    fv.bp+"",            " mmHg","SBP",       fv.bp>=140?"Stage 2 HTN":fv.bp>=130?"Stage 1":"Normal",           "var(--amber)","var(--amber-lt)"),
-    fpCard("pill",      "",       fv.medCount+"",      "",     "Active Meds","medications",                                                   "var(--indigo)","var(--indigo-lt)"),
-    fpCard("clipboard", "",       fv.dxCount+"",       "",     "Diagnoses", "active conditions",                                              "var(--teal-dark)","var(--teal-lt)"),
-    fpCard("calendar",  "",       fv.encCount+"",      "",     "Encounters","on record",                                                       "var(--muted)","var(--cream3)"),
-    fpCard("check-circle", fv.onMetformin?"ok":"", fv.onMetformin?"Yes":"No", "", "Metformin","biguanide class",                              "var(--teal-dark)","var(--teal-lt)")
-  ].join("");
-
-  // PSM
-  const psm = computePSM(fv, cohort);
-  el("psm-info").innerHTML = `
-    <div class="psm-badge">
-      ${ic("check-circle",14,"var(--teal-dark)")}
-      <span>Propensity-balanced cohort · ${psm.matched.length} matched patients</span>
-    </div>
-    <div style="margin-top:8px;font-size:12px;font-weight:700;color:var(--muted)">
-      ${ic("info",12,"var(--muted)")}
-      Standardized Mean Difference (HbA1c):
-      <span class="psm-mono"> SMD = ${psm.smd}</span>
-      <span style="margin-left:6px;color:${parseFloat(psm.smd)<0.1?'var(--teal-dark)':'var(--amber)'}">
-        ${parseFloat(psm.smd)<0.1?"✓ Well-balanced (SMD < 0.1)":"⚠ Moderate imbalance"}
-      </span>
-    </div>
-  `;
-
-  // Stats
-  const total = cohort.length;
-  const imp   = cohort.filter(c=>c.outcome==="improved").length;
-  const hosp  = cohort.filter(c=>c.outcome==="hospitalized").length;
-  const det   = cohort.filter(c=>c.outcome==="deteriorated").length;
-  const pct   = n => Math.round(n/total*100);
-
-  const impCI  = bootstrapCI(cohort,"improved");
-  const hospCI = bootstrapCI(cohort,"hospitalized");
-  const detCI  = bootstrapCI(cohort,"deteriorated");
-  const adj    = buildAdjusted(cohort);
-
-  el("cohort-stats").innerHTML = `
-    <div class="co-stat">
-      <div class="co-val ink">${total}</div>
-      <div class="co-label">${ic("users",12,"var(--muted)")} patients</div>
-    </div>
-    <div class="co-stat">
-      <div class="co-val teal">${pct(imp)}%</div>
-      <div class="co-label">improved</div>
-      <div style="font-size:10px;font-weight:700;color:var(--hint);margin-top:2px;font-family:var(--font-mono)">
-        95% CI ${impCI.lo}–${impCI.hi}%
-      </div>
-    </div>
-    <div class="co-stat">
-      <div class="co-val amber">${pct(hosp)}%</div>
-      <div class="co-label">hospitalized</div>
-      <div style="font-size:10px;font-weight:700;color:var(--hint);margin-top:2px;font-family:var(--font-mono)">
-        95% CI ${hospCI.lo}–${hospCI.hi}%
-      </div>
-    </div>
-    <div class="co-stat">
-      <div class="co-val rose">${pct(det)}%</div>
-      <div class="co-label">deteriorated</div>
-      <div style="font-size:10px;font-weight:700;color:var(--hint);margin-top:2px;font-family:var(--font-mono)">
-        95% CI ${detCI.lo}–${detCI.hi}%
-      </div>
-    </div>
-  `;
-  el("stacked-bar").innerHTML = `
-    <div class="seg improved"     style="width:${pct(imp)}%">${pct(imp)}%</div>
-    <div class="seg hospitalized" style="width:${pct(hosp)}%">${pct(hosp)}%</div>
-    <div class="seg deteriorated" style="width:${pct(det)}%">${pct(det)}%</div>
-  `;
-  el("adj-outcome").innerHTML = `
-    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:4px">
-      <div>
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Raw outcome</div>
-        <div style="font-family:var(--font);font-size:22px;font-weight:900;color:var(--ink)">${adj.raw}% improved</div>
-      </div>
-      <div>
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Adjusted (regression)</div>
-        <div style="font-family:var(--font);font-size:22px;font-weight:900;color:var(--teal-dark)">${adj.adjusted}% improved</div>
-        <div style="font-size:11px;font-weight:700;color:var(--muted)">+${adj.diff}% after covariate adjustment</div>
-      </div>
-    </div>
-  `;
-
-  // Chart
-  destroyChart("overview-chart");
-  const ctx = el("overview-chart").getContext("2d");
-  charts["overview-chart"] = new Chart(ctx, {
-    type:"bar",
-    data:{
-      labels: cohort.map(c=>c.name.replace("Patient #","")),
-      datasets:[{
-        label:"Similarity",
-        data: cohort.map(c=>Math.round(c.simScore*100)),
-        backgroundColor: cohort.map(c=>
-          c.outcome==="improved"     ? "rgba(0,137,123,0.75)" :
-          c.outcome==="hospitalized" ? "rgba(217,119,6,0.75)" :
-                                       "rgba(224,92,122,0.75)"),
-        borderRadius:8, borderSkipped:false
-      }]
-    },
-    options:{
-      responsive:true,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:i=>`Similarity: ${i.parsed.y}%`, footer:items=>`Outcome: ${cap(cohort[items[0].dataIndex].outcome)}`}} },
-      scales:{ y:{min:0,max:100,ticks:{callback:v=>v+"%"},grid:{color:"rgba(0,0,0,0.04)"}}, x:{grid:{display:false}} }
-    }
-  });
-}
-
-/* Survival panel */
-function renderSurvival(cohort) {
-  const kmAll  = buildKMCurve(cohort, "all");
-  const kmImp  = buildKMCurve(cohort, "improved");
-  const kmHosp = buildKMCurve(cohort.filter(c=>c.outcome!=="improved"), "all");
-
-  // KM
-  destroyChart("km-chart");
-  const ctx = el("km-chart").getContext("2d");
-  charts["km-chart"] = new Chart(ctx, {
-    type:"line",
-    data:{
-      datasets:[
-        {
-          label:"All patients",
-          data: kmAll.times.map((t,i)=>({x:t, y:kmAll.survival[i]})),
-          borderColor:"rgba(0,137,123,0.9)", backgroundColor:"rgba(0,137,123,0.08)",
-          fill:true, stepped:true, tension:0, pointRadius:2, borderWidth:2
-        },
-        {
-          label:"Improved subgroup",
-          data: kmImp.times.map((t,i)=>({x:t, y:kmImp.survival[i]})),
-          borderColor:"rgba(92,107,192,0.8)", backgroundColor:"transparent",
-          fill:false, stepped:true, tension:0, pointRadius:2, borderWidth:2, borderDash:[4,3]
-        },
-        {
-          label:"Hospitalized/deteriorated",
-          data: kmHosp.times.map((t,i)=>({x:t, y:kmHosp.survival[i]})),
-          borderColor:"rgba(224,92,122,0.8)", backgroundColor:"transparent",
-          fill:false, stepped:true, tension:0, pointRadius:2, borderWidth:2, borderDash:[2,3]
-        }
-      ]
-    },
-    options:{
-      responsive:true,
-      plugins:{
-        legend:{display:false},
-        tooltip:{
-          callbacks:{
-            title:items=>`Day ${items[0].parsed.x}`,
-            label:item=>`${item.dataset.label}: ${(item.parsed.y*100).toFixed(0)}% event-free`
-          }
-        }
-      },
-      scales:{
-        x:{type:"linear", title:{display:true,text:"Days from baseline",font:{size:11}}, ticks:{font:{size:11}}, grid:{color:"rgba(0,0,0,0.04)"}},
-        y:{min:0, max:1, title:{display:true,text:"Event-free probability",font:{size:11}}, ticks:{callback:v=>(v*100)+"%",font:{size:11}}, grid:{color:"rgba(0,0,0,0.04)"}}
-      }
-    }
-  });
-
-  // Markov
-  const markov = buildMarkov(cohort);
-  el("markov-body").innerHTML = markov.map(row=>{
-    const p = parseFloat(row.prob);
-    const cls = p >= 0.3 ? "high" : p >= 0.15 ? "mid" : "low";
-    return `<tr>
-      <td style="color:var(--muted)">${row.from}</td>
-      <td>${ic("chevron-right",12,"var(--hint)")} ${row.to}</td>
-      <td><span class="trans-val ${cls}">${row.prob}</span></td>
-    </tr>`;
+  /* Patient chips */
+  var condChips = $.map(patient.conditions.slice(0,4), function(c){
+    return '<span class="chip teal">' + ic("clipboard",11,"var(--teal-dark)") + " " + c + "</span>";
   }).join("");
-}
+  var medChips = $.map(patient.meds.slice(0,4), function(m){
+    return '<span class="chip amber">' + ic("pill",11,"#7a4900") + " " + m + "</span>";
+  }).join("");
+  var labChips = (patient.latestHbA1c
+    ? '<span class="chip rose">' + ic("droplet",11,"var(--rose-dark)") + " HbA1c " + fmt2(patient.latestHbA1c) + "%</span>"
+    : "") +
+    (patient.latestBP
+    ? '<span class="chip indigo">' + ic("activity",11,"var(--indigo)") + " SBP " + fmt2(patient.latestBP) + "</span>"
+    : "");
 
-/* Analytics */
-function renderAnalytics(cohort) {
-  // Clusters
-  const clusters = buildClusters(cohort);
-  el("cluster-list").innerHTML = clusters.map(c=>`
-    <div class="cluster-item">
-      <div class="cluster-num" style="background:${c.bg};color:${c.color}">${c.num}</div>
-      <div>
-        <div class="cluster-name">${c.name}</div>
-        <div class="cluster-desc">${c.desc}</div>
-      </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div class="cluster-pct" style="color:${c.color}">${c.pct}</div>
-        <div style="font-size:10px;font-weight:700;color:var(--hint)">${c.n} pts</div>
-      </div>
-    </div>`).join("");
+  $("#patient-chips").html(
+    '<div class="chip-section"><div class="chip-group-label">Conditions</div>'
+    + '<div class="chip-row">' + condChips + '</div></div>'
+    + '<div class="chip-section" style="margin-top:8px"><div class="chip-group-label">Medications</div>'
+    + '<div class="chip-row">' + medChips + '</div></div>'
+    + (labChips ? '<div class="chip-section" style="margin-top:8px"><div class="chip-group-label">Labs</div>'
+    + '<div class="chip-row">' + labChips + '</div></div>' : "")
+  );
 
-  // Radar
-  destroyChart("radar-chart");
-  const ctx = el("radar-chart").getContext("2d");
-  const fv  = buildVector(currentPatient);
-  charts["radar-chart"] = new Chart(ctx, {
-    type:"radar",
-    data:{
-      labels:["Diabetes Dx","Hypertension","Dyslipidemia","On Metformin","On ACE/ARB","On Statin"],
-      datasets:[
-        {
-          label:"This patient",
-          data:[fv.hasDiabetes?1:0, fv.hasHTN?1:0, fv.hasDyslipid?1:0, fv.onMetformin?1:0, fv.onACE?1:0, fv.onStatin?1:0],
-          borderColor:"rgba(0,137,123,0.9)", backgroundColor:"rgba(0,137,123,0.15)",
-          pointBackgroundColor:"rgba(0,137,123,1)", borderWidth:2
-        },
-        {
-          label:"Cohort average",
-          data: [
-            cohort.reduce((s,c)=>s+(buildCohortVec(c)[0]),0)/cohort.length,
-            cohort.reduce((s,c)=>s+(buildCohortVec(c)[1]),0)/cohort.length,
-            cohort.reduce((s,c)=>s+(buildCohortVec(c)[2]),0)/cohort.length,
-            cohort.reduce((s,c)=>s+(buildCohortVec(c)[3]),0)/cohort.length,
-            cohort.reduce((s,c)=>s+(buildCohortVec(c)[4]),0)/cohort.length,
-            cohort.reduce((s,c)=>s+(buildCohortVec(c)[5]),0)/cohort.length,
-          ],
-          borderColor:"rgba(92,107,192,0.7)", backgroundColor:"rgba(92,107,192,0.10)",
-          pointBackgroundColor:"rgba(92,107,192,0.8)", borderWidth:2, borderDash:[4,3]
-        }
-      ]
+  /* Fingerprint grid — max 2 decimal */
+  var hba1cCls = fv.hba1c>=8?"danger":fv.hba1c>=7?"warn":"ok";
+  var bpCls    = fv.bp>=140?"danger":fv.bp>=130?"warn":"ok";
+  $("#fp-grid").html(
+    fpCard("droplet",      hba1cCls,              fmt2(fv.hba1c), "%",    "HbA1c",
+           fv.hba1c>=8?"High":fv.hba1c>=7?"Borderline":"Normal",
+           "var(--rose-dark)","var(--rose-lt)") +
+    fpCard("activity",     bpCls,                 fmt2(fv.bp),    "mmHg", "Systolic BP",
+           fv.bp>=140?"High":fv.bp>=130?"Elevated":"Normal",
+           "var(--amber)","var(--amber-lt)") +
+    fpCard("pill",         "",                    fv.medCount+"", "",     "Medications",
+           "active","var(--indigo)","var(--indigo-lt)") +
+    fpCard("clipboard",    "",                    fv.dxCount+"",  "",     "Diagnoses",
+           "active","var(--teal-dark)","var(--teal-lt)") +
+    fpCard("calendar",     "",                    fv.encCount+"", "",     "Encounters",
+           "recorded","var(--muted)","var(--cream3)") +
+    fpCard("check-circle", fv.onMetformin?"ok":"",fv.onMetformin?"Yes":"No","","Metformin",
+           "on record","var(--teal-dark)","var(--teal-lt)")
+  );
+
+  var psm   = computePSM(fv, cohort);
+  var smdOk = parseFloat(psm.smd) < 0.1;
+  $("#psm-info").html(
+    '<div class="psm-badge">'
+    + ic("check-circle",14,"var(--teal-dark)")
+    + " " + psm.matched.length + " matched patients"
+    + '</div>'
+    + '<div style="margin-top:8px;font-size:12px;font-weight:700;color:var(--muted)">'
+    + "SMD = "
+    + '<span class="psm-mono">' + fmt2(parseFloat(psm.smd)) + '</span>'
+    + ' <span style="margin-left:6px;color:' + (smdOk?"var(--teal-dark)":"var(--amber)") + '">'
+    + (smdOk ? "✓ Balanced" : "⚠ Check balance")
+    + '</span></div>'
+  );
+
+  /* Cohort stats + CI */
+  var total  = cohort.length;
+  var imp    = $.grep(cohort,function(c){return c.outcome==="improved";}).length;
+  var hosp   = $.grep(cohort,function(c){return c.outcome==="hospitalized";}).length;
+  var det    = $.grep(cohort,function(c){return c.outcome==="deteriorated";}).length;
+  var pct    = function(n){ return Math.round(n/total*100); };
+  var impCI  = bootstrapCI(cohort,"improved");
+  var hospCI = bootstrapCI(cohort,"hospitalized");
+  var detCI  = bootstrapCI(cohort,"deteriorated");
+  var adj    = buildAdjusted(cohort);
+
+  $("#cohort-stats").html(
+    coStat(total,        "ink",   "patients",     "")+
+    coStat(pct(imp)+"%", "teal",  "improved",     impCI.lo+"–"+impCI.hi+"%")+
+    coStat(pct(hosp)+"%","amber", "hospitalized", hospCI.lo+"–"+hospCI.hi+"%")+
+    coStat(pct(det)+"%", "rose",  "deteriorated", detCI.lo+"–"+detCI.hi+"%")
+  );
+  $("#stacked-bar").html(
+    '<div class="seg improved"     style="width:'+pct(imp)+'%">'+pct(imp)+'%</div>'+
+    '<div class="seg hospitalized" style="width:'+pct(hosp)+'%">'+pct(hosp)+'%</div>'+
+    '<div class="seg deteriorated" style="width:'+pct(det)+'%">'+pct(det)+'%</div>'
+  );
+  $("#adj-outcome").html(
+    '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:4px">'
+    + '<div><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Raw</div>'
+    + '<div style="font-family:var(--font);font-size:22px;font-weight:900;color:var(--ink)">' + adj.raw + '%</div></div>'
+    + '<div><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Adjusted</div>'
+    + '<div style="font-family:var(--font);font-size:22px;font-weight:900;color:var(--teal-dark)">' + adj.adjusted + '%</div>'
+    + '<div style="font-size:11px;font-weight:700;color:var(--muted)">+' + adj.diff + '% covariate adjustment</div></div>'
+    + '</div>'
+  );
+
+  /* ── Highcharts bar chart — skipped if HC not loaded yet ── */
+  if (typeof Highcharts === "undefined") return;
+  destroyHC("overview-chart");
+  Highcharts.chart("overview-chart", {
+    chart: {
+      type: "column",
+      backgroundColor: "transparent",
+      style: {fontFamily: "'Nunito', sans-serif"},
+      height: 180,
+      margin: [10, 10, 40, 40]
     },
-    options:{
-      responsive:true,
-      plugins:{ legend:{ position:"bottom", labels:{font:{size:11},boxWidth:12} } },
-      scales:{ r:{ min:0, max:1, ticks:{stepSize:0.25,font:{size:10}}, pointLabels:{font:{size:11}} } }
-    }
+    title:   {text: null},
+    credits: {enabled: false},
+    legend:  {enabled: false},
+    xAxis: {
+      categories: $.map(cohort, function(c){ return c.name.replace("Patient #",""); }),
+      lineColor: "rgba(0,105,92,0.12)",
+      tickColor: "transparent",
+      labels: {style:{color:"#6B8480", fontSize:"11px", fontWeight:"700"}}
+    },
+    yAxis: {
+      min:0, max:100,
+      title: {text: null},
+      gridLineColor: "rgba(0,105,92,0.06)",
+      labels: {format:"{value}%", style:{color:"#6B8480", fontSize:"11px"}}
+    },
+    tooltip: {
+      backgroundColor: "#fff",
+      borderColor: "rgba(0,105,92,0.15)",
+      borderRadius: 10,
+      shadow: false,
+      formatter: function() {
+        var c = cohort[this.point.index];
+        return "<b>" + this.x + "</b><br/>Similarity: " + this.y + "%<br/>Outcome: " + cap(c.outcome);
+      }
+    },
+    plotOptions: {
+      column: {
+        borderRadius: 8,
+        colorByPoint: true,
+        colors: $.map(cohort, function(c){
+          return c.outcome==="improved"     ? "rgba(0,137,123,0.75)"
+               : c.outcome==="hospitalized" ? "rgba(217,119,6,0.75)"
+               : "rgba(224,92,122,0.75)";
+        })
+      }
+    },
+    series: [{
+      name: "Similarity",
+      data: $.map(cohort, function(c){ return Math.round(c.simScore*100); })
+    }]
   });
 }
 
-/* Matches */
+/* ════════════════════════════════════════════
+   TAB 2 — SURVIVAL (Highcharts line chart)
+════════════════════════════════════════════ */
+function renderSurvival(cohort) {
+  var kmAll  = buildKMCurve(cohort, "all");
+  var kmImp  = buildKMCurve(cohort, "improved");
+  var kmBad  = buildKMCurve(
+    $.grep(cohort,function(c){return c.outcome!=="improved";}), "all"
+  );
+
+  function kmSeries(km) {
+    return $.map(km.times, function(t,i){ return {x:t, y:km.survival[i]}; });
+  }
+
+  /* ── Highcharts KM curve — skipped if HC not loaded yet ── */
+  if (typeof Highcharts === "undefined") return;
+  destroyHC("km-chart");
+  Highcharts.chart("km-chart", {
+    chart: {
+      type: "line",
+      backgroundColor: "transparent",
+      style: {fontFamily:"'Nunito', sans-serif"},
+      height: 220,
+      margin: [10, 10, 50, 50]
+    },
+    title:   {text: null},
+    credits: {enabled: false},
+    legend:  {
+      enabled: true,
+      itemStyle: {fontSize:"11px", fontWeight:"700", color:"#6B8480"}
+    },
+    xAxis: {
+      title: {text:"Days from baseline", style:{fontSize:"11px"}},
+      gridLineColor:"rgba(0,105,92,0.06)",
+      labels: {style:{fontSize:"11px"}}
+    },
+    yAxis: {
+      min:0, max:1,
+      title: {text:"Event-free probability", style:{fontSize:"11px"}},
+      gridLineColor:"rgba(0,105,92,0.06)",
+      labels: {formatter:function(){ return (this.value*100)+"%"; }, style:{fontSize:"11px"}}
+    },
+    tooltip: {
+      backgroundColor:"#fff", borderColor:"rgba(0,105,92,0.15)",
+      borderRadius:10, shadow:false,
+      formatter:function(){
+        return "Day <b>" + Math.round(this.x) + "</b><br/>"
+             + this.series.name + ": <b>" + Math.round(this.y*100) + "%</b> event-free";
+      }
+    },
+    plotOptions: {
+      line: {
+        step: "left",
+        marker: {enabled:false}
+      }
+    },
+    series: [
+      {name:"All patients",             data:kmSeries(kmAll),  color:"rgba(0,137,123,0.9)",  lineWidth:2},
+      {name:"Improved subgroup",        data:kmSeries(kmImp),  color:"rgba(92,107,192,0.8)",  lineWidth:2, dashStyle:"Dash"},
+      {name:"Hospitalized/deteriorated",data:kmSeries(kmBad),  color:"rgba(224,92,122,0.8)",  lineWidth:2, dashStyle:"ShortDot"}
+    ]
+  });
+
+  /* Markov table — jQuery .html() */
+  var markov = buildMarkov(cohort);
+  var rows = $.map(markov, function(row){
+    var p   = parseFloat(row.prob);
+    var cls = p>=0.3?"high":p>=0.15?"mid":"low";
+    return "<tr><td style='color:var(--muted)'>" + row.from + "</td>"
+         + "<td>" + ic("chevron-right",12,"var(--hint)") + " " + row.to + "</td>"
+         + "<td><span class='trans-val " + cls + "'>" + fmt2(p) + "</span></td></tr>";
+  });
+  $("#markov-body").html(rows.join(""));
+}
+
+/* ════════════════════════════════════════════
+   TAB 3 — ANALYTICS (Highcharts radar)
+════════════════════════════════════════════ */
+function renderAnalytics(fv, cohort) {
+
+  /* Clusters — jQuery .html() */
+  var clusters = buildClusters(cohort);
+  var clHtml = $.map(clusters, function(c){
+    return '<div class="cluster-item">'
+         + '<div class="cluster-num" style="background:' + c.bg + ';color:' + c.color + '">' + c.num + '</div>'
+         + '<div><div class="cluster-name">' + c.name + '</div>'
+         + '<div class="cluster-desc">' + c.desc + '</div></div>'
+         + '<div style="text-align:right;flex-shrink:0">'
+         + '<div class="cluster-pct" style="color:' + c.color + '">' + c.pct + '</div>'
+         + '<div style="font-size:10px;font-weight:700;color:var(--hint)">' + c.n + ' pts</div>'
+         + '</div></div>';
+  });
+  $("#cluster-list").html(clHtml.join(""));
+
+  /* ── Highcharts radar — skipped if HC not loaded yet ── */
+  if (typeof Highcharts === "undefined") return;
+  var cohortAvg = [0,1,2,3,4,5].map(function(i){
+    return cohort.reduce(function(s,c){ return s + buildCohortVec(c)[i]; }, 0) / cohort.length;
+  });
+
+  destroyHC("radar-chart");
+  Highcharts.chart("radar-chart", {
+    chart: {
+      polar: true,
+      type: "line",
+      backgroundColor: "transparent",
+      style: {fontFamily:"'Nunito', sans-serif"},
+      height: 220,
+      margin: [10, 10, 10, 10]
+    },
+    title:   {text: null},
+    credits: {enabled: false},
+    pane:    {size: "75%"},
+    legend:  {
+      enabled: true,
+      itemStyle: {fontSize:"11px", fontWeight:"700", color:"#6B8480"}
+    },
+    xAxis: {
+      categories: ["Diabetes","Hypertension","Dyslipidemia","Metformin","ACE/ARB","Statin"],
+      tickmarkPlacement: "on",
+      lineWidth: 0,
+      labels: {style:{fontSize:"10px", fontWeight:"700"}}
+    },
+    yAxis: {
+      gridLineInterpolation: "polygon",
+      lineWidth: 0,
+      min: 0, max: 1,
+      labels: {enabled: false}
+    },
+    tooltip: {
+      backgroundColor:"#fff", borderRadius:10, shadow:false,
+      shared: true
+    },
+    series: [
+      {
+        name: "This patient",
+        data: [fv.hasDiabetes?1:0, fv.hasHTN?1:0, fv.hasDyslipid?1:0,
+               fv.onMetformin?1:0, fv.onACE?1:0, fv.onStatin?1:0],
+        color: "rgba(0,137,123,0.9)",
+        fillColor: "rgba(0,137,123,0.12)",
+        lineWidth: 2,
+        marker: {symbol:"circle", radius:4}
+      },
+      {
+        name: "Cohort average",
+        data: cohortAvg,
+        color: "rgba(92,107,192,0.7)",
+        fillColor: "rgba(92,107,192,0.08)",
+        lineWidth: 2,
+        dashStyle: "Dash",
+        marker: {symbol:"circle", radius:4}
+      }
+    ]
+  });
+}
+
+/* ════════════════════════════════════════════
+   TAB 4 — MATCHES
+   jQuery .html() for card injection
+════════════════════════════════════════════ */
 function renderMatches(cohort) {
-  const filtered = currentFilter==="all" ? cohort : cohort.filter(c=>c.outcome===currentFilter);
+  var filtered = currentFilter==="all" ? cohort
+    : $.grep(cohort, function(c){ return c.outcome===currentFilter; });
+
   if (!filtered.length) {
-    el("dg-list").innerHTML = `<div class="empty-state">${ic("search",32,"var(--hint)")}<p>No matches for this filter.</p></div>`;
+    $("#dg-list").html(
+      '<div class="empty-state">' + ic("search",32,"var(--hint)")
+      + '<p>No matches for this filter.</p></div>'
+    );
     return;
   }
-  el("dg-list").innerHTML = filtered.map((c,i)=>{
-    const pct = Math.round(c.simScore*100);
-    const simCls = pct>=85?"high":"mid";
-    const tlHTML = c.timeline.map(t=>`
-      <div class="tl-item">
-        <div class="tl-dot ${t.type}">${ic(tlIcon(t.type),12,tlColor(t.type))}</div>
-        <div class="tl-content">
-          <div class="tl-event">${t.event}</div>
-          <div class="tl-date">${ic("clock",10,"var(--hint)")} ${t.date}</div>
-        </div>
-      </div>`).join("");
-    const reasonsHTML = c.matchReasons.map(r=>`
-      <div class="reason-row">
-        <span style="flex-shrink:0">${ic(r.icon,14,"var(--teal-dark)")}</span>
-        <div class="reason-text"><span class="reason-key">${r.key}:</span> ${r.note}</div>
-      </div>`).join("");
-    return `
-    <div class="dg-card fade d${Math.min(i+1,5)}" id="dgc-${c.id}" onclick="toggleCard('${c.id}')">
-      <div class="dg-header">
-        <div class="dg-sim-block">
-          <div class="dg-sim-num ${simCls}">${pct}%</div>
-          <div class="dg-sim-label">match</div>
-        </div>
-        <div class="dg-divider"></div>
-        <div class="dg-info">
-          <div class="dg-name">${c.name}</div>
-          <div class="dg-meta">
-            <span>${ic("user",11,"var(--hint)")} ${c.age}y · ${cap(c.gender)}</span>
-            <span>${ic("git-branch",11,"var(--hint)")} ${c.timeline.length} events</span>
-            <span>${ic("clock",11,"var(--hint)")} Day ${c.daysToEvent}</span>
-          </div>
-        </div>
-        <span class="outcome-badge badge-${c.outcome}">
-          ${ic(outcomeIcon(c.outcome),11,outcomeColor(c.outcome))} ${cap(c.outcome)}
-        </span>
-        <div class="dg-chevron">${ic("chevron-down",13,"currentColor")}</div>
-      </div>
-      <div class="dg-detail">
-        <div class="dg-detail-grid">
-          <div>
-            <div class="dg-section">${ic("map",11,"var(--muted)")} Trajectory</div>
-            <div class="timeline">${tlHTML}</div>
-          </div>
-          <div>
-            <div class="dg-section">${ic("sparkles",11,"var(--muted)")} Why matched</div>
-            ${reasonsHTML}
-            <div class="dg-section" style="margin-top:14px">${ic("zap",11,"var(--muted)")} Turning point</div>
-            <div class="turning-pt"><strong>Note:</strong> ${c.turningPoint}</div>
-          </div>
-        </div>
-      </div>
-    </div>`;
+
+  var html = $.map(filtered, function(c,i){
+    var pct    = Math.round(c.simScore*100);
+    var simCls = pct>=85?"high":"mid";
+
+    var tlHtml = $.map(c.timeline, function(t){
+      return '<div class="tl-item">'
+           + '<div class="tl-dot ' + t.type + '">' + ic(tlIcon(t.type),12,tlColor(t.type)) + '</div>'
+           + '<div class="tl-content">'
+           + '<div class="tl-event">' + t.event + '</div>'
+           + '<div class="tl-date">' + ic("clock",10,"var(--hint)") + ' ' + t.date + '</div>'
+           + '</div></div>';
+    }).join("");
+
+    var reasonHtml = $.map(c.matchReasons, function(r){
+      return '<div class="reason-row">'
+           + '<span style="flex-shrink:0">' + ic(r.icon,14,"var(--teal-dark)") + '</span>'
+           + '<div class="reason-text"><span class="reason-key">' + r.key + ':</span> ' + r.note + '</div>'
+           + '</div>';
+    }).join("");
+
+    return '<div class="dg-card fade d' + Math.min(i+1,5) + '" id="dgc-' + c.id + '" '
+         + 'onclick="toggleCard(\'' + c.id + '\')">'
+         + '<div class="dg-header">'
+         + '<div class="dg-sim-block">'
+         + '<div class="dg-sim-num ' + simCls + '">' + pct + '%</div>'
+         + '<div class="dg-sim-label">match</div></div>'
+         + '<div class="dg-divider"></div>'
+         + '<div class="dg-info">'
+         + '<div class="dg-name">' + c.name + '</div>'
+         + '<div class="dg-meta">'
+         + '<span>' + ic("user",11,"var(--hint)") + ' ' + c.age + 'y · ' + cap(c.gender) + '</span>'
+         + '<span>' + ic("git-branch",11,"var(--hint)") + ' ' + c.timeline.length + ' events</span>'
+         + '<span>' + ic("clock",11,"var(--hint)") + ' Day ' + c.daysToEvent + '</span>'
+         + '</div></div>'
+         + '<span class="outcome-badge badge-' + c.outcome + '">'
+         + ic(outcomeIcon(c.outcome),11,outcomeColor(c.outcome)) + ' ' + cap(c.outcome)
+         + '</span>'
+         + '<div class="dg-chevron">' + ic("chevron-down",13,"currentColor") + '</div>'
+         + '</div>'
+         + '<div class="dg-detail">'
+         + '<div class="dg-detail-grid">'
+         + '<div><div class="dg-section">' + ic("map",11,"var(--muted)") + ' Trajectory</div>'
+         + '<div class="timeline">' + tlHtml + '</div></div>'
+         + '<div><div class="dg-section">' + ic("sparkles",11,"var(--muted)") + ' Why matched</div>'
+         + reasonHtml
+         + '<div class="dg-section" style="margin-top:14px">' + ic("zap",11,"var(--muted)") + ' Turning point</div>'
+         + '<div class="turning-pt"><strong>Note:</strong> ' + c.turningPoint + '</div>'
+         + '</div></div></div></div>';
   }).join("");
+
+  $("#dg-list").html(html);
 }
 
-function toggleCard(id) { el("dgc-"+id)?.classList.toggle("expanded"); }
+function toggleCard(id) {
+  $("#dgc-" + id).toggleClass("expanded");
+}
 
-/* Filter */
+/* ════════════════════════════════════════════
+   FILTER
+════════════════════════════════════════════ */
 function setFilter(f, btn) {
   currentFilter = f;
-  document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
+  $(".filter-btn").removeClass("active");
+  $(btn).addClass("active");
   if (currentPatient) {
-    const fv = buildVector(currentPatient);
-    const cohort = DEMO_COHORT.map(c=>({...c, simScore:cosine(fv.vec,buildCohortVec(c))})).sort((a,b)=>b.simScore-a.simScore);
+    var fv = buildVector(currentPatient);
+    var cohort = $.map(DEMO_COHORT, function(c){
+      return $.extend({}, c, {simScore: cosine(fv.vec, buildCohortVec(c))});
+    }).sort(function(a,b){ return b.simScore - a.simScore; });
     renderMatches(cohort);
   }
 }
 
-/* Helpers */
-function fpCard(iconName, cls, val, unit, label, sub, iconColor, iconBg) {
-  return `<div class="fp-card ${cls}">
-    <div class="fp-icon" style="background:${iconBg}">${ic(iconName,14,iconColor)}</div>
-    <div class="fp-label">${label}</div>
-    <div class="fp-val">${val}<span style="font-size:11px;font-weight:700">${unit}</span></div>
-    <div class="fp-sub">${sub}</div>
-  </div>`;
+/* ════════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════
+   STANDALONE CHART WRAPPERS
+   Called by index.html after Highcharts loads
+════════════════════════════════════════════ */
+function renderOverviewChart(cohort) {
+  if (!currentPatient || typeof Highcharts === "undefined") return;
+  var fv = buildVector(currentPatient);
+  renderOverview(currentPatient, fv, cohort);
+}
+function renderSurvivalCharts(cohort) {
+  if (typeof Highcharts === "undefined") return;
+  renderSurvival(cohort);
+}
+function renderRadarChart(fv, cohort) {
+  if (typeof Highcharts === "undefined") return;
+  renderAnalytics(fv, cohort);
 }
 
-function destroyChart(id) { if(charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function fpCard(iconName, cls, val, unit, label, sub, iconColor, iconBg) {
+  return '<div class="fp-card ' + cls + '">'
+       + '<div class="fp-icon" style="background:' + iconBg + '">' + ic(iconName,14,iconColor) + '</div>'
+       + '<div class="fp-label">' + label + '</div>'
+       + '<div class="fp-val">' + val + '<span style="font-size:11px;font-weight:700">' + unit + '</span></div>'
+       + '<div class="fp-sub">' + sub + '</div></div>';
+}
 
-function el(id)          { return document.getElementById(id); }
-function show(id)        { el(id).style.display = ""; }
-function hide(id)        { el(id).style.display = "none"; }
-function cap(s)          { return s?s[0].toUpperCase()+s.slice(1):""; }
-function initials(name)  { return (name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase(); }
-function setLoadMsg(msg) { document.querySelector(".ld-sub").textContent = msg; }
+function coStat(val, cls, label, ci) {
+  return '<div class="co-stat">'
+       + '<div class="co-val ' + cls + '">' + val + '</div>'
+       + '<div class="co-label">' + label + '</div>'
+       + (ci ? '<div style="font-size:10px;font-weight:700;color:var(--hint);margin-top:2px;font-family:var(--font-mono)">' + ci + '</div>' : "")
+       + '</div>';
+}
+
+function destroyHC(id) {
+  if (hcCharts[id]) { hcCharts[id].destroy(); delete hcCharts[id]; }
+  /* Highcharts.chart() returns the chart — store it */
+  var orig = Highcharts.chart;
+  Highcharts.chart = function(container, opts) {
+    if (container === id || (typeof container === "string" && container === id)) {
+      var c = orig.apply(this, arguments);
+      hcCharts[id] = c;
+      return c;
+    }
+    return orig.apply(this, arguments);
+  };
+}
+
+function testCond(list, re) { return list.some(function(s){ return re.test(s); }); }
+function testMed(list, re)  { return list.some(function(s){ return re.test(s); }); }
+function initials(name)     { return (name||"?").split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase(); }
+function cap(s)             { return s ? s[0].toUpperCase() + s.slice(1) : ""; }
+function setLoadMsg(msg) { var el = document.getElementById("ld-msg"); if (el) el.textContent = msg; }
+/* fmt2: max 2 decimal places, strips trailing zeros */
+function fmt2(n) {
+  if (n === null || n === undefined) return "—";
+  var v = parseFloat(n);
+  if (isNaN(v)) return "—";
+  return parseFloat(v.toFixed(2)).toString();
+}
 
 function tlIcon(t)  { return {condition:"clipboard",medication:"pill",encounter:"stethoscope",outcome:"check-circle"}[t]||"clock"; }
 function tlColor(t) { return {condition:"var(--indigo)",medication:"var(--teal-dark)",encounter:"var(--amber)",outcome:"var(--rose-dark)"}[t]||"var(--muted)"; }

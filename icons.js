@@ -1,8 +1,12 @@
-/* Icons */
+/* ══════════════════════════════════════════════
+   icons.js — inline SVG icon library
+   Source: Lucide Icons (lucide.dev)
+   Usage:  ic("heart", 18, "#E05C7A")
+══════════════════════════════════════════════ */
 
 const ICONS = {
 
-  /* Brand */
+  /* ── App branding ──────────────────────────── */
   "dna": `<svg viewBox="0 0 24 24"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/><path d="M10 9c-.195-1.995-.888-3.992-2-5.997"/><path d="m17 8-1.006 5.932"/><path d="M2 9c6.667 6 13.333 0 20 6"/><path d="m7 17 1.006-5.932"/></svg>`,
   "users": `<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   "stethoscope": `<svg viewBox="0 0 24 24"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>`,
@@ -10,7 +14,7 @@ const ICONS = {
   "activity": `<svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
   "brain": `<svg viewBox="0 0 24 24"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg>`,
 
-  /* Clinical */
+  /* ── Clinical data ─────────────────────────── */
   "droplet": `<svg viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>`,
   "pill": `<svg viewBox="0 0 24 24"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>`,
   "clipboard": `<svg viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>`,
@@ -18,7 +22,7 @@ const ICONS = {
   "thermometer": `<svg viewBox="0 0 24 24"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>`,
   "syringe": `<svg viewBox="0 0 24 24"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>`,
 
-  /* UI */
+  /* ── Navigation / UI ───────────────────────── */
   "chevron-down": `<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>`,
   "chevron-right":`<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`,
   "search":       `<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`,
@@ -42,7 +46,12 @@ const ICONS = {
   "filter":       `<svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>`,
 };
 
-/* SVG */
+/**
+ * Returns an <svg> string for the given icon name.
+ * @param {string} name - icon key from ICONS
+ * @param {number} size - px size (default 16)
+ * @param {string} stroke - CSS color (default "currentColor")
+ */
 function svgIcon(name, size = 16, stroke = "currentColor") {
   const raw = ICONS[name];
   if (!raw) return "";
@@ -52,7 +61,9 @@ function svgIcon(name, size = 16, stroke = "currentColor") {
   );
 }
 
-/* Wrapper */
+/**
+ * Returns a full .ic wrapper span with the icon inside.
+ */
 function ic(name, size = 16, stroke = "currentColor") {
   return `<span class="ic">${svgIcon(name, size, stroke)}</span>`;
 }

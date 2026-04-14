@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical Doppelgänger</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Nunito Sans', sans-serif;
+  background: #FDFAF5;
+  color: #1A2422;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --teal:      #00897B;
+  --teal-dark: #00695C;
+  --teal-lt:   #E0F2F1;
+  --cream:     #FDFAF5;
+  --cream2:    #F5F0E8;
+  --cream3:    #EDE6D8;
+  --line:      rgba(0,105,92,0.10);
+  --muted:     #6B8480;
+  --rose:      #E05C7A;
+  --rose-lt:   #FDE8EE;
+  --amber:     #D97706;
+  --amber-lt:  #FEF3CD;
+  --indigo:    #5C6BC0;
+  --indigo-lt: #EDE7F6;
+}
+
+/* ── NAV ─────────────────────────────────── */
+nav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(253,250,245,0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;
+}
+.nav-logo-icon {
+  width: 32px; height: 32px;
+  background: var(--teal-dark);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.nav-logo-icon svg { width: 16px; height: 16px; stroke: #fff; }
+.nav-logo-text {
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px; font-weight: 900;
+  color: var(--teal-dark);
+  letter-spacing: -0.02em;
+}
+.nav-links { display: flex; align-items: center; gap: 8px; }
+.nav-link {
+  font-size: 13px; font-weight: 700;
+  color: var(--muted); text-decoration: none;
+  padding: 6px 12px; border-radius: 8px;
+  transition: background 0.13s, color 0.13s;
+}
+.nav-link:hover { background: var(--teal-lt); color: var(--teal-dark); }
+.nav-cta {
+  background: var(--teal-dark); color: #fff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px; font-weight: 800;
+  padding: 8px 18px; border-radius: 99px;
+  text-decoration: none;
+  transition: background 0.13s;
+}
+.nav-cta:hover { background: var(--teal); }
+
+/* ── HERO ────────────────────────────────── */
+.hero {
+  max-width: 760px; margin: 0 auto;
+  padding: 80px 40px 64px;
+  text-align: center;
+}
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--teal-lt);
+  color: var(--teal-dark);
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px; font-weight: 800;
+  padding: 5px 14px; border-radius: 99px;
+  margin-bottom: 24px;
+  letter-spacing: 0.04em;
+}
+.hero-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(36px, 6vw, 56px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: #1A2422;
+  margin-bottom: 18px;
+}
+.hero-title span { color: var(--teal-dark); }
+.hero-sub {
+  font-size: 17px; font-weight: 600;
+  color: var(--muted);
+  max-width: 540px; margin: 0 auto 36px;
+  line-height: 1.65;
+}
+.hero-btns { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--teal-dark); color: #fff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px; font-weight: 800;
+  padding: 12px 28px; border-radius: 99px;
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: background 0.13s, transform 0.13s;
+}
+.btn-primary:hover { background: var(--teal); transform: translateY(-1px); }
+.btn-secondary {
+  background: var(--cream2); color: var(--teal-dark);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px; font-weight: 800;
+  padding: 12px 28px; border-radius: 99px;
+  text-decoration: none; border: 1.5px solid var(--line);
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: background 0.13s;
+}
+.btn-secondary:hover { background: var(--teal-lt); }
+
+/* ── PREVIEW CARD ────────────────────────── */
+.preview-wrap {
+  max-width: 900px; margin: 0 auto;
+  padding: 0 40px 80px;
+}
+.preview-card {
+  background: #fff;
+  border-radius: 20px;
+  border: 1.5px solid var(--line);
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,105,92,0.10);
+}
+.preview-topbar {
+  background: var(--teal-dark);
+  padding: 12px 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.preview-dot { width: 10px; height: 10px; border-radius: 50%; }
+.preview-body {
+  display: grid; grid-template-columns: 200px 1fr;
+  min-height: 280px;
+}
+.preview-sidebar {
+  background: var(--teal-dark);
+  padding: 16px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.preview-sb-item {
+  background: rgba(255,255,255,0.12);
+  border-radius: 8px; padding: 10px 12px;
+}
+.preview-sb-name { font-family:'Nunito',sans-serif; font-size:12px; font-weight:800; color:#fff; }
+.preview-sb-sub  { font-size:10px; color:rgba(255,255,255,0.45); margin-top:2px; }
+.preview-sb-item.active { background:rgba(255,255,255,0.20); }
+.preview-content { padding: 20px; background: #FDFAF5; }
+.preview-chips { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:14px; }
+.preview-chip {
+  font-family:'Nunito',sans-serif; font-size:10px; font-weight:800;
+  padding: 3px 9px; border-radius:99px; border:1.5px solid;
+}
+.preview-chip.teal   { background:var(--teal-lt);   color:var(--teal-dark);  border-color:rgba(0,137,123,0.2); }
+.preview-chip.amber  { background:var(--amber-lt);  color:#7a4900;           border-color:rgba(217,119,6,0.2); }
+.preview-chip.rose   { background:var(--rose-lt);   color:#c0445f;           border-color:rgba(224,92,122,0.2); }
+.preview-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.preview-metric {
+  background:#fff; border-radius:10px;
+  border:1px solid var(--line); padding:10px 12px;
+}
+.preview-metric-val { font-family:'Nunito',sans-serif; font-size:20px; font-weight:900; line-height:1; }
+.preview-metric-lbl { font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-top:2px; }
+.preview-bar-row { display:flex; height:14px; border-radius:99px; overflow:hidden; }
+.preview-bar-seg { height:100%; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; color:#fff; }
+
+/* ── HOW IT WORKS ────────────────────────── */
+.section { max-width: 860px; margin: 0 auto; padding: 0 40px 80px; }
+.section-label {
+  font-size: 11px; font-weight: 900;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--muted); margin-bottom: 24px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-label::after { content:""; flex:1; height:1px; background:var(--line); }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.step-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1.5px solid var(--line);
+  padding: 20px;
+}
+.step-num {
+  width: 32px; height: 32px; border-radius: 10px;
+  font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px;
+}
+.step-title { font-family:'Nunito',sans-serif; font-size:14px; font-weight:900; color:#1A2422; margin-bottom:5px; }
+.step-desc  { font-size:12px; font-weight:600; color:var(--muted); line-height:1.6; }
+
+/* ── STATS ───────────────────────────────── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px; margin-bottom: 80px;
+  max-width: 860px; margin-left: auto; margin-right: auto;
+  padding: 0 40px 80px;
+}
+.stat-card {
+  background: #fff; border-radius: 16px;
+  border: 1.5px solid var(--line); padding: 20px 22px;
+  text-align: center;
+}
+.stat-val { font-family:'Nunito',sans-serif; font-size:32px; font-weight:900; letter-spacing:-0.04em; line-height:1; }
+.stat-lbl { font-size:12px; font-weight:700; color:var(--muted); margin-top:4px; }
+
+/* ── FHIR RESOURCES ──────────────────────── */
+.resources-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px;
+}
+.res-card {
+  background: #fff; border-radius: 12px;
+  border: 1.5px solid var(--line); padding: 14px 16px;
+}
+.res-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 8px;
+}
+.res-name  { font-family:'Nunito',sans-serif; font-size:13px; font-weight:900; color:#1A2422; margin-bottom:2px; }
+.res-desc  { font-size:11px; font-weight:600; color:var(--muted); }
+.res-loinc { font-size:10px; font-weight:700; color:var(--teal-dark); margin-top:4px; font-family:monospace; }
+
+/* ── TEAM ────────────────────────────────── */
+.team-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.team-card {
+  background: #fff; border-radius: 16px;
+  border: 1.5px solid var(--line); padding: 20px 22px;
+  display: flex; align-items: center; gap: 14px;
+  flex: 1; min-width: 220px;
+}
+.team-avatar-wrap {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.team-avatar-wrap img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.team-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--teal-lt); color: var(--teal-dark);
+  font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.team-name { font-family:'Nunito',sans-serif; font-size:15px; font-weight:900; color:#1A2422; }
+.team-role { font-size:12px; font-weight:700; color:var(--muted); margin-top:2px; }
+.team-school { font-size:11px; font-weight:700; color:var(--teal-dark); margin-top:2px; }
+
+/* ── FOOTER ──────────────────────────────── */
+footer {
+  border-top: 1px solid var(--line);
+  padding: 28px 40px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  max-width: 100%;
+}
+.footer-left { font-size:12px; font-weight:700; color:var(--muted); }
+.footer-left span { color: var(--teal-dark); font-weight:800; }
+.footer-tag {
+  font-size:11px; font-weight:800; letter-spacing:0.08em;
+  color:var(--muted); text-transform:uppercase;
+}
+
+/* ── DIVIDER ─────────────────────────────── */
+.divider { height:1px; background:var(--line); margin: 0 40px 60px; max-width:860px; margin-left:auto; margin-right:auto; }
+
+@media (max-width: 640px) {
+  nav { padding: 12px 20px; }
+  .nav-links .nav-link { display:none; }
+  .hero { padding: 60px 20px 48px; }
+  .preview-wrap { padding: 0 20px 60px; }
+  .preview-body { grid-template-columns: 1fr; }
+  .preview-sidebar { display:none; }
+  .section { padding: 0 20px 60px; }
+  .stats-row { padding: 0 20px 60px; }
+  footer { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="landing.html" class="nav-logo">
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 15c6.667-6 13.333 0 20-6"/>
+        <path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/>
+        <path d="M10 9c-.195-1.995-.888-3.992-2-5.997"/>
+        <path d="m17 8-1.006 5.932"/>
+        <path d="M2 9c6.667 6 13.333 0 20 6"/>
+        <path d="m7 17 1.006-5.932"/>
+      </svg>
+    </div>
+    <span class="nav-logo-text">Clinical Doppelgänger</span>
+  </a>
+  <div class="nav-links">
+    <a href="#how-it-works" class="nav-link">How it works</a>
+    <a href="#fhir" class="nav-link">FHIR Data</a>
+    <a href="#team" class="nav-link">Team</a>
+    <a href="index.html" class="nav-cta">Launch App →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/>
+      <path d="M10 9c-.195-1.995-.888-3.992-2-5.997"/><path d="m17 8-1.006 5.932"/>
+      <path d="M2 9c6.667 6 13.333 0 20 6"/><path d="m7 17 1.006-5.932"/>
+    </svg>
+    SMART on FHIR · Graduate Project
+  </div>
+  <h1 class="hero-title">Find patients who were<br><span>once where you are now</span></h1>
+  <p class="hero-sub">Clinical Doppelgänger matches the current patient to historical patients with similar clinical profiles — and shows what happened to them.</p>
+  <div class="hero-btns">
+    <a href="index.html" class="btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Launch App
+    </a>
+    <a href="#how-it-works" class="btn-secondary">
+      How it works
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- APP PREVIEW -->
+<div class="preview-wrap">
+  <div class="preview-card">
+    <div class="preview-topbar">
+      <div class="preview-dot" style="background:rgba(255,255,255,0.25)"></div>
+      <div class="preview-dot" style="background:rgba(255,255,255,0.15)"></div>
+      <div class="preview-dot" style="background:rgba(255,255,255,0.10)"></div>
+      <span style="font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;color:rgba(255,255,255,0.5);margin-left:8px">Clinical Doppelgänger · SMART on FHIR</span>
+    </div>
+    <div class="preview-body">
+      <div class="preview-sidebar">
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,0.35);margin-bottom:4px">Patients</div>
+        <div class="preview-sb-item active">
+          <div class="preview-sb-name">Eleanor Voss</div>
+          <div class="preview-sb-sub">63y · Female</div>
+        </div>
+        <div class="preview-sb-item">
+          <div class="preview-sb-name">Raymond Chu</div>
+          <div class="preview-sb-sub">66y · Male</div>
+        </div>
+        <div class="preview-sb-item">
+          <div class="preview-sb-name">Sandra Okafor</div>
+          <div class="preview-sb-sub">54y · Female</div>
+        </div>
+      </div>
+      <div class="preview-content">
+        <div class="preview-chips">
+          <span class="preview-chip teal">Type 2 Diabetes</span>
+          <span class="preview-chip teal">Hypertension</span>
+          <span class="preview-chip amber">Metformin 1000mg</span>
+          <span class="preview-chip amber">Lisinopril 10mg</span>
+          <span class="preview-chip rose">HbA1c 8.20%</span>
+        </div>
+        <div class="preview-metrics">
+          <div class="preview-metric">
+            <div class="preview-metric-val" style="color:#C0445F">8.20<span style="font-size:11px">%</span></div>
+            <div class="preview-metric-lbl">HbA1c</div>
+          </div>
+          <div class="preview-metric">
+            <div class="preview-metric-val" style="color:#D97706">142</div>
+            <div class="preview-metric-lbl">SBP mmHg</div>
+          </div>
+          <div class="preview-metric">
+            <div class="preview-metric-val" style="color:#1A2422">5</div>
+            <div class="preview-metric-lbl">Encounters</div>
+          </div>
+        </div>
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px">Cohort outcomes (n=5, 95% CI)</div>
+        <div class="preview-bar-row">
+          <div class="preview-bar-seg" style="width:60%;background:var(--teal)">60%</div>
+          <div class="preview-bar-seg" style="width:20%;background:var(--amber);color:#1A2422">20%</div>
+          <div class="preview-bar-seg" style="width:20%;background:var(--rose)">20%</div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:5px">
+          <span style="font-size:9px;font-weight:800;color:var(--teal)">↑ Improved</span>
+          <span style="font-size:9px;font-weight:800;color:var(--amber)">⚠ Hospitalized</span>
+          <span style="font-size:9px;font-weight:800;color:var(--rose)">↓ Deteriorated</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-val" style="color:var(--teal-dark)">5</div>
+    <div class="stat-lbl">FHIR resources used</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val" style="color:var(--indigo)">11</div>
+    <div class="stat-lbl">Feature dimensions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val" style="color:var(--rose)">200×</div>
+    <div class="stat-lbl">Bootstrap CI iterations</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val" style="color:var(--amber)">4</div>
+    <div class="stat-lbl">Statistical methods</div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works">
+  <div class="section-label">How it works</div>
+  <div class="steps">
+    <div class="step-card">
+      <div class="step-num" style="background:var(--teal-lt);color:var(--teal-dark)">1</div>
+      <div class="step-title">Connect via SMART</div>
+      <div class="step-desc">Launch from any FHIR R4 EHR or the SMART sandbox. OAuth2 handles authentication automatically.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num" style="background:var(--indigo-lt);color:var(--indigo)">2</div>
+      <div class="step-title">Build fingerprint</div>
+      <div class="step-desc">Patient data is encoded into an 11-dimensional feature vector from diagnoses, labs, meds, and visits.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num" style="background:var(--amber-lt);color:var(--amber)">3</div>
+      <div class="step-title">Match & balance</div>
+      <div class="step-desc">Cosine similarity finds the closest historical patients. Propensity Score Matching ensures statistical comparability (SMD &lt; 0.10).</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num" style="background:var(--rose-lt);color:var(--rose)">4</div>
+      <div class="step-title">See trajectories</div>
+      <div class="step-desc">View Kaplan-Meier curves, Markov transitions, 95% CI outcomes, and individual patient timelines with turning points.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FHIR RESOURCES -->
+<section class="section" id="fhir">
+  <div class="section-label">FHIR resources</div>
+  <div class="resources-grid">
+    <div class="res-card">
+      <div class="res-icon" style="background:var(--teal-lt)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal-dark)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div class="res-name">Patient</div>
+      <div class="res-desc">Name, DOB, gender</div>
+    </div>
+    <div class="res-card">
+      <div class="res-icon" style="background:var(--indigo-lt)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--indigo)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+      </div>
+      <div class="res-name">Condition</div>
+      <div class="res-desc">Diagnoses → binary flags</div>
+    </div>
+    <div class="res-card">
+      <div class="res-icon" style="background:var(--amber-lt)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+      </div>
+      <div class="res-name">MedicationRequest</div>
+      <div class="res-desc">Active drugs → drug class</div>
+    </div>
+    <div class="res-card">
+      <div class="res-icon" style="background:var(--rose-lt)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--rose)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="res-name">Observation</div>
+      <div class="res-desc">HbA1c · Systolic BP</div>
+      <div class="res-loinc">4548-4 · 8480-6</div>
+    </div>
+    <div class="res-card">
+      <div class="res-icon" style="background:var(--teal-lt)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal-dark)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+      </div>
+      <div class="res-name">Encounter</div>
+      <div class="res-desc">Visit count → utilization</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TEAM -->
+<section class="section" id="team">
+  <div class="section-label">Contributors</div>
+  <div class="team-row">
+    <div class="team-card">
+      <div class="team-avatar-wrap">
+        <img src="public/mia.jpg" alt="Mia Zhou"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="team-avatar" style="display:none">MZ</div>
+      </div>
+      <div>
+        <div class="team-name">Mia Zhou</div>
+        <div class="team-role">Biostatistics &amp; Applied Math</div>
+        <div class="team-school">Junior · UNC Chapel Hill</div>
+      </div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar-wrap">
+        <img src="public/yutong.jpg" alt="Yutong Wu"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="team-avatar" style="display:none">YW</div>
+      </div>
+      <div>
+        <div class="team-name">Yutong Wu</div>
+        <div class="team-role">Biostatistics &amp; Psychology</div>
+        <div class="team-school">Junior · UNC Chapel Hill</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:14px;font-size:12px;font-weight:700;color:var(--muted);line-height:1.6">
+    Built for CHIP 741 · Healthcare App Development · Spring 2026 · UNC Chapel Hill<br>
+    SMART on FHIR · jQuery · Highcharts · GitHub Pages
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">
+    <span>Clinical Doppelgänger</span> · Mia Zhou &amp; Yutong Wu · CHIP 741 · UNC Chapel Hill
+  </div>
+  <div class="footer-tag">SMART on FHIR · HL7 R4</div>
+</footer>
+
+</body>
+</html>
