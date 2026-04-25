@@ -1,0 +1,317 @@
+[
+  {
+    "id": "hist-001",
+    "name": "Historical #A-4821",
+    "age": 61,
+    "gender": "female",
+    "features": {
+      "conditions": ["Type 2 Diabetes", "Hypertension"],
+      "meds": ["Metformin 1000mg", "Lisinopril 10mg"],
+      "latestHbA1c": 8.4,
+      "latestBP": 144,
+      "encounters": 5
+    },
+    "outcome": "improved",
+    "daysToEvent": 420,
+    "turningPoint": "Improvement began after metformin titration and consistent quarterly follow-up.",
+    "matchReasons": [
+      {"icon": "droplet", "key": "HbA1c baseline", "note": "Similar HbA1c range at baseline"},
+      {"icon": "pill", "key": "Metformin", "note": "Same biguanide medication class"},
+      {"icon": "clipboard", "key": "Diagnoses", "note": "Overlapping diabetes and hypertension"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "T2D + HTN documented", "date": "~4 yrs ago"},
+      {"type": "medication", "event": "Metformin started", "date": "~4 yrs ago"},
+      {"type": "encounter", "event": "Regular follow-up", "date": "~3 yrs ago"},
+      {"type": "outcome", "event": "Stable, no hospitalizations", "date": "Present"}
+    ]
+  },
+  {
+    "id": "hist-002",
+    "name": "Historical #B-3309",
+    "age": 65,
+    "gender": "male",
+    "features": {
+      "conditions": ["Type 2 Diabetes", "Hypertension", "Hyperlipidemia"],
+      "meds": ["Metformin 500mg", "Atorvastatin 40mg"],
+      "latestHbA1c": 7.6,
+      "latestBP": 136,
+      "encounters": 5
+    },
+    "outcome": "improved",
+    "daysToEvent": 510,
+    "turningPoint": "Combination therapy and lipid control stabilized follow-up labs.",
+    "matchReasons": [
+      {"icon": "layers", "key": "Comorbidities", "note": "Diabetes, hypertension, and lipid disease overlap"},
+      {"icon": "pill", "key": "Statin use", "note": "Concurrent statin therapy"},
+      {"icon": "calendar", "key": "Visit pattern", "note": "Similar encounter frequency"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "T2D + HTN + dyslipidemia", "date": "~5 yrs ago"},
+      {"type": "medication", "event": "Metformin + statin", "date": "~5 yrs ago"},
+      {"type": "encounter", "event": "BP improved", "date": "~2 yrs ago"},
+      {"type": "outcome", "event": "LDL normalized", "date": "Present"}
+    ]
+  },
+  {
+    "id": "hist-003",
+    "name": "Historical #C-7714",
+    "age": 62,
+    "gender": "female",
+    "features": {
+      "conditions": ["Type 2 Diabetes", "Hypertension"],
+      "meds": ["Metformin 500mg"],
+      "latestHbA1c": 9.0,
+      "latestBP": 162,
+      "encounters": 2
+    },
+    "outcome": "hospitalized",
+    "daysToEvent": 180,
+    "turningPoint": "Care gap preceded hospitalization for hypertensive urgency.",
+    "matchReasons": [
+      {"icon": "droplet", "key": "High HbA1c", "note": "Baseline HbA1c above 8.5"},
+      {"icon": "alert-circle", "key": "Missed follow-up", "note": "Care gap detected"},
+      {"icon": "activity", "key": "Blood pressure", "note": "Uncontrolled systolic BP"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "Uncontrolled diabetes and HTN", "date": "~4 yrs ago"},
+      {"type": "encounter", "event": "Follow-up gap", "date": "~2 yrs ago"},
+      {"type": "outcome", "event": "Hospitalized: hypertensive urgency", "date": "~1 yr ago"}
+    ]
+  },
+  {
+    "id": "hist-004",
+    "name": "Historical #D-5502",
+    "age": 58,
+    "gender": "male",
+    "features": {
+      "conditions": ["Type 2 Diabetes", "Obesity", "Hypertension"],
+      "meds": ["Metformin 1000mg", "Lisinopril 20mg", "Amlodipine 5mg"],
+      "latestHbA1c": 8.8,
+      "latestBP": 150,
+      "encounters": 4
+    },
+    "outcome": "improved",
+    "daysToEvent": 630,
+    "turningPoint": "Combination therapy and weight management program improved control.",
+    "matchReasons": [
+      {"icon": "pill", "key": "Medication burden", "note": "Multiple cardiometabolic medications"},
+      {"icon": "user", "key": "Demographics", "note": "Similar age band"},
+      {"icon": "activity", "key": "Obesity", "note": "Obesity appears in the baseline profile"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "T2D + obesity + HTN", "date": "~6 yrs ago"},
+      {"type": "medication", "event": "Combination therapy", "date": "~6 yrs ago"},
+      {"type": "encounter", "event": "Weight management program", "date": "~3 yrs ago"},
+      {"type": "outcome", "event": "Stable, weight improved", "date": "Present"}
+    ]
+  },
+  {
+    "id": "hist-005",
+    "name": "Historical #E-2287",
+    "age": 67,
+    "gender": "female",
+    "features": {
+      "conditions": ["Type 2 Diabetes", "Hypertension", "Chronic Kidney Disease"],
+      "meds": ["Metformin 500mg", "Lisinopril 10mg", "Atorvastatin 20mg"],
+      "latestHbA1c": 9.4,
+      "latestBP": 148,
+      "encounters": 6
+    },
+    "outcome": "deteriorated",
+    "daysToEvent": 270,
+    "turningPoint": "Medication gaps and renal decline preceded worsening clinical state.",
+    "matchReasons": [
+      {"icon": "trending-down", "key": "Worsening HbA1c", "note": "Progressive lab rise"},
+      {"icon": "alert-circle", "key": "Medication gaps", "note": "Possible adherence concern"},
+      {"icon": "layers", "key": "Comorbidity load", "note": "Multiple active conditions"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "T2D + HTN + CKD", "date": "~5 yrs ago"},
+      {"type": "encounter", "event": "Renal function worsened", "date": "~2 yrs ago"},
+      {"type": "outcome", "event": "Deteriorated: CKD progression", "date": "Present"}
+    ]
+  },
+  {
+    "id": "hist-006",
+    "name": "Historical #F-9044",
+    "age": 55,
+    "gender": "female",
+    "features": {
+      "conditions": ["Essential Hypertension", "Anxiety Disorder"],
+      "meds": ["Losartan 50mg", "Sertraline 100mg"],
+      "latestHbA1c": null,
+      "latestBP": 134,
+      "encounters": 7
+    },
+    "outcome": "improved",
+    "daysToEvent": 540,
+    "turningPoint": "Blood pressure stabilized after medication adjustment and regular primary care follow-up.",
+    "matchReasons": [
+      {"icon": "activity", "key": "Blood pressure", "note": "Similar non-diabetic hypertension profile"},
+      {"icon": "calendar", "key": "Visit pattern", "note": "Frequent outpatient follow-up"},
+      {"icon": "pill", "key": "ARB therapy", "note": "Antihypertensive medication overlap"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "Hypertension documented", "date": "~3 yrs ago"},
+      {"type": "medication", "event": "ARB adjusted", "date": "~2 yrs ago"},
+      {"type": "outcome", "event": "BP stable", "date": "Present"}
+    ]
+  },
+  {
+    "id": "hist-007",
+    "name": "Historical #G-1180",
+    "age": 70,
+    "gender": "male",
+    "features": {
+      "conditions": ["Essential Hypertension", "Heart Failure"],
+      "meds": ["Amlodipine 10mg", "Furosemide 20mg"],
+      "latestHbA1c": null,
+      "latestBP": 166,
+      "encounters": 8
+    },
+    "outcome": "hospitalized",
+    "daysToEvent": 120,
+    "turningPoint": "Persistently elevated BP and volume symptoms preceded admission.",
+    "matchReasons": [
+      {"icon": "activity", "key": "High systolic BP", "note": "Markedly elevated blood pressure"},
+      {"icon": "layers", "key": "Cardiac burden", "note": "Heart failure adds complexity"},
+      {"icon": "calendar", "key": "High encounter use", "note": "Frequent care episodes"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "HTN + heart failure", "date": "~4 yrs ago"},
+      {"type": "encounter", "event": "Volume symptoms", "date": "~6 months ago"},
+      {"type": "outcome", "event": "Hospitalized", "date": "~4 months ago"}
+    ]
+  },
+  {
+    "id": "hist-008",
+    "name": "Historical #H-7720",
+    "age": 49,
+    "gender": "female",
+    "features": {
+      "conditions": ["Anxiety Disorder"],
+      "meds": ["Sertraline 50mg"],
+      "latestHbA1c": null,
+      "latestBP": 118,
+      "encounters": 2
+    },
+    "outcome": "improved",
+    "daysToEvent": 600,
+    "turningPoint": "Symptoms improved with medication continuation and outpatient follow-up.",
+    "matchReasons": [
+      {"icon": "clipboard", "key": "Low cardiometabolic burden", "note": "No diabetes or hypertension signal"},
+      {"icon": "pill", "key": "SSRI therapy", "note": "Medication profile overlaps"},
+      {"icon": "calendar", "key": "Low acute-care use", "note": "Few encounters"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "Anxiety disorder", "date": "~2 yrs ago"},
+      {"type": "medication", "event": "SSRI continued", "date": "~2 yrs ago"},
+      {"type": "outcome", "event": "Stable outpatient course", "date": "Present"}
+    ]
+  },
+  {
+    "id": "hist-009",
+    "name": "Historical #J-4402",
+    "age": 64,
+    "gender": "male",
+    "features": {
+      "conditions": ["Type 2 Diabetes", "Obesity", "Hypertension"],
+      "meds": ["Metformin 500mg", "Amlodipine 5mg"],
+      "latestHbA1c": 9.3,
+      "latestBP": 156,
+      "encounters": 3
+    },
+    "outcome": "hospitalized",
+    "daysToEvent": 150,
+    "turningPoint": "Poor glycemic control and persistent hypertension preceded an acute-care admission.",
+    "matchReasons": [
+      {"icon": "droplet", "key": "High HbA1c", "note": "HbA1c stayed above 9"},
+      {"icon": "activity", "key": "Blood pressure", "note": "Systolic BP remained elevated"},
+      {"icon": "calendar", "key": "Sparse follow-up", "note": "Few outpatient encounters before admission"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "T2D + obesity + HTN", "date": "~3 yrs ago"},
+      {"type": "encounter", "event": "Limited follow-up", "date": "~18 months ago"},
+      {"type": "outcome", "event": "Hospitalized after worsening symptoms", "date": "~5 months ago"}
+    ]
+  },
+  {
+    "id": "hist-010",
+    "name": "Historical #K-2035",
+    "age": 52,
+    "gender": "female",
+    "features": {
+      "conditions": ["Essential Hypertension", "Anxiety Disorder"],
+      "meds": ["Losartan 50mg", "Sertraline 100mg"],
+      "latestHbA1c": null,
+      "latestBP": 132,
+      "encounters": 6
+    },
+    "outcome": "improved",
+    "daysToEvent": 700,
+    "turningPoint": "Regular primary-care follow-up and stable ARB therapy kept BP controlled.",
+    "matchReasons": [
+      {"icon": "activity", "key": "Non-diabetic HTN", "note": "Hypertension without diabetes"},
+      {"icon": "pill", "key": "ARB therapy", "note": "Losartan regimen overlap"},
+      {"icon": "calendar", "key": "Follow-up pattern", "note": "Consistent outpatient monitoring"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "Hypertension and anxiety documented", "date": "~4 yrs ago"},
+      {"type": "medication", "event": "ARB continued", "date": "~3 yrs ago"},
+      {"type": "outcome", "event": "BP remained stable", "date": "Present"}
+    ]
+  },
+  {
+    "id": "hist-011",
+    "name": "Historical #L-6109",
+    "age": 57,
+    "gender": "female",
+    "features": {
+      "conditions": ["Essential Hypertension", "Anxiety Disorder"],
+      "meds": ["Losartan 100mg", "Sertraline 100mg"],
+      "latestHbA1c": null,
+      "latestBP": 140,
+      "encounters": 8
+    },
+    "outcome": "improved",
+    "daysToEvent": 620,
+    "turningPoint": "Dose adjustment and close follow-up reduced recurrent elevated readings.",
+    "matchReasons": [
+      {"icon": "activity", "key": "Hypertension pattern", "note": "Similar BP range without diabetes"},
+      {"icon": "pill", "key": "Medication overlap", "note": "ARB and SSRI profile overlap"},
+      {"icon": "calendar", "key": "Frequent care", "note": "Multiple outpatient encounters"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "Essential hypertension", "date": "~5 yrs ago"},
+      {"type": "medication", "event": "Losartan increased", "date": "~2 yrs ago"},
+      {"type": "outcome", "event": "Improved outpatient BP control", "date": "Present"}
+    ]
+  },
+  {
+    "id": "hist-012",
+    "name": "Historical #M-8824",
+    "age": 66,
+    "gender": "male",
+    "features": {
+      "conditions": ["Type 2 Diabetes", "Obesity", "Hypertension"],
+      "meds": ["Metformin 500mg", "Amlodipine 10mg"],
+      "latestHbA1c": 9.0,
+      "latestBP": 160,
+      "encounters": 3
+    },
+    "outcome": "deteriorated",
+    "daysToEvent": 240,
+    "turningPoint": "Persistently high HbA1c and BP led to worsening cardiometabolic status.",
+    "matchReasons": [
+      {"icon": "droplet", "key": "Glycemic control", "note": "HbA1c near 9"},
+      {"icon": "activity", "key": "Uncontrolled BP", "note": "Systolic BP near 160"},
+      {"icon": "layers", "key": "Obesity burden", "note": "Obesity adds risk context"}
+    ],
+    "timeline": [
+      {"type": "condition", "event": "T2D + obesity + HTN", "date": "~4 yrs ago"},
+      {"type": "encounter", "event": "Elevated labs persisted", "date": "~1 yr ago"},
+      {"type": "outcome", "event": "Deteriorated cardiometabolic control", "date": "Present"}
+    ]
+  }
+]

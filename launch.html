@@ -10,7 +10,7 @@
     FHIR.oauth2.authorize({
       clientId:    "clinical-doppelganger",
       scope:       "launch openid fhirUser patient/*.read",
-      redirectUri: "index.html"
+      redirectUri: new URL("index.html", window.location.href).href
     });
   </script>
 </body>
